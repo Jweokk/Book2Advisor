@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""MrCao — 密码门与会话认证（TASK-P5）。
+"""Book2Advisor — 密码门与会话认证。
 
 - 密码只从环境变量 ADVISOR_PASSWORD 读取；未设置则拒绝启动（禁止硬编码默认密码）
 - 登录成功签发随机 session token（secrets.token_hex(32)），服务端内存 dict 保存

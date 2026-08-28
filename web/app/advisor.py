@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""MrCao — run_chain 的薄包装（TASK-P5）。
+"""Book2Advisor — run_chain 的薄包装。
 
 原样调用 core/runtime/ask.run_chain（禁止修改 core/ 任何文件）：
     - client 传 None：run_chain 内部自建 DeepSeekClient()，API key 自动从

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Method Runtime 集成测试（TASK-P4，真实 LLM 调用，不 mock）。
+Method Runtime 集成测试（真实 LLM 调用，不 mock）。
 
 覆盖验收点：
     - test_ask_direct   ：A 类题「人物怎么看待诚信经营」→ 8 段标题齐全、证据来源非空、含 [第X章] 引用

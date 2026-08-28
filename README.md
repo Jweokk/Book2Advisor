@@ -103,7 +103,7 @@ cd web && uvicorn app.main:app --host 0.0.0.0 --port 8000
 core/                   # 核心代码
   runtime/              #   运行时：8 步推理链（ask.py / llm.py / prompts.py）
 schemas/                # Person Method Model Schema（JSON Schema，9 类实体）
-scripts/                # CLI：convert / validate_schema / ask / batch_ask / score / diff
+scripts/                # CLI：convert / validate_schema / ask / gen_triggers
 web/                    # Web Advisor：FastAPI + 原生前端（密码登录 + Method Trace 展示）
 tests/                  # pytest（14 用例：schema 校验 / 运行时 / 中文化）
 docs/                   # 方法论文档（语料准入标准等）

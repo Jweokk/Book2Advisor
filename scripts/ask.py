@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Method Advisor — CLI 入口（TASK-P4）。
+Method Advisor — CLI 入口。
 
 用法：
     python3 scripts/ask.py "问题" [--verbose]

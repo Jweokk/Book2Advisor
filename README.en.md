@@ -106,7 +106,7 @@ cd web && uvicorn app.main:app --host 0.0.0.0 --port 8000
 core/                   # Core code
   runtime/              #   Runtime: 8-step inference chain (ask.py / llm.py / prompts.py)
 schemas/                # Person Method Model Schema (JSON Schema, 9 entity types)
-scripts/                # CLI: convert / validate_schema / ask / batch_ask / score / diff
+scripts/                # CLI: convert / validate_schema / ask / gen_triggers
 web/                    # Web advisor: FastAPI + vanilla frontend (login + Method Trace view)
 tests/                  # pytest (14 cases: schema / runtime / localization)
 docs/                   # Methodology docs (corpus admission standards, etc.)

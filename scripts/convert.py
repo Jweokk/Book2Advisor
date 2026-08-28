@@ -30,7 +30,7 @@ import sys
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-ANYDOC_PATH = Path("/home/ubuntu/.npm-global/bin/anydoc")
+ANYDOC_PATH = Path(os.environ.get("ANYDOC_PATH", str(Path.home() / ".npm-global/bin/anydoc")))
 CONVERT_TIMEOUT = 120  # 外部命令超时（秒）
 
 VALID_TYPES = ("book", "article", "speech", "case")

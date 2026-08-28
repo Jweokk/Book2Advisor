@@ -1,4 +1,4 @@
-/* MrCao — 前端交互（TASK-P5）
+/* Book2Advisor — 前端交互
  * 零外部依赖：原生 fetch + DOM。零 SVG 图标、零 emoji 装饰。
  * 提交问题 → POST /api/ask → 渐进渲染 8 段 Method Trace。 */
 

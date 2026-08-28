@@ -7,6 +7,7 @@
 """
 
 import subprocess
+import os
 import sys
 from pathlib import Path
 
@@ -20,8 +21,8 @@ import convert  # noqa: E402   （import 顺序在 sys.path 调整之后）
 CONVERT_SCRIPT = PROJECT_ROOT / "scripts" / "convert.py"
 
 # 测试语料：优先使用任务指定的 docx；不可用时回退到任意现成 .docx/.md
-TEST_DOCX = Path("/home/ubuntu/workspace/xu/智商税思考框架.docx")
-FALLBACK_ROOTS = [PROJECT_ROOT / "refs", Path("/home/ubuntu/workspace")]
+TEST_DOCX = Path(os.environ.get("TEST_DOCX", str(PROJECT_ROOT / "refs" / "sample.docx")))
+FALLBACK_ROOTS = [PROJECT_ROOT / "refs"]
 
 
 def _find_fallback_doc():

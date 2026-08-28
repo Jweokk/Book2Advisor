@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Method Advisor — LLM prompt 模板集中地（TASK-P4 硬性约束：模板禁止散落硬编码）。
+Method Advisor — LLM prompt 模板集中地。
 
 覆盖 8 步推理链中 5 次 LLM 调用：
     步骤2 问题分类     → classify_system / classify_user

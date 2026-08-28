@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Method Advisor — 8 步推理链主流程（TASK-P4）。
+Method Advisor — 8 步推理链主流程。
 
 推理链：
     1. 加载 Method Model（yaml.safe_load）
@@ -28,11 +28,11 @@ import yaml
 from core.runtime.llm import LLMError, extract_json
 from core.runtime import prompts
 
-# Method Model 默认路径（TASK-P4 指定输入）
+# Method Model 默认路径
 # Method Model 路径：必须通过环境变量 METHOD_MODEL 指定（如 /path/to/data/methods/<person>/<model>.yaml）
 METHOD_MODEL_PATH = Path(os.environ["METHOD_MODEL"]) if os.environ.get("METHOD_MODEL") else None
 
-# Method Trace 的 8 段标题（TASK-P4 第 8 步指定，测试按此断言）
+# Method Trace 的 8 段标题（测试按此断言）
 TRACE_SECTIONS = [
     "## 问题理解",
     "## 诊断路径（按人物方法，先看什么）",
@@ -145,7 +145,7 @@ def run_chain(model: dict, question: str, client=None, verbose: bool = False) ->
     )
     classification["name"] = (_diag or {}).get("name") or classification["diagnostic_id"]
 
-    # 选中的诊断路径：按 id 匹配；不匹配时按顺序用第一条（TASK-P4 要求）
+    # 选中的诊断路径：按 id 匹配；不匹配时按顺序用第一条
     diagnostic = next(
         (d for d in diagnostics_all if d["id"] == classification["diagnostic_id"]),
         diagnostics_all[0] if diagnostics_all else {"id": "", "order": ["先了解情况再作判断"]},

@@ -172,7 +172,7 @@ definitions:
         items:
           type: string
           minLength: 1
-        description: "与之冲突的原则 ID 列表（可选，计划书草案字段）"
+        description: "与之冲突的原则 ID 列表（可选字段）"
       trigger:
         type: object
         description: "触发场景（触发场景设计）：原则在什么情境下会被激活。scenes/signals 至少填一个"

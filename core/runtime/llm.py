@@ -17,7 +17,7 @@ from pathlib import Path
 
 import openai
 
-# DeepSeek 服务参数（TASK-P4 指定）
+# DeepSeek 服务参数
 DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
 DEEPSEEK_MODEL = "deepseek-v4-flash"
 REQUEST_TIMEOUT = 60.0          # 硬性：单次请求超时 60s

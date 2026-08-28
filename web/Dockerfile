@@ -1,4 +1,4 @@
-# MrCao Web Advisor 镜像（TASK-P5）
+# Book2Advisor Web Advisor 镜像
 # 构建上下文 = 项目根（docker-compose.yml 中 build.context: ..）
 FROM python:3.12-slim
 
@@ -12,7 +12,7 @@ WORKDIR /app
 COPY web/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 复制运行时所需目录（容器布局见 TASK-P5：core/schemas/data/methods/web）
+# 复制运行时所需目录（容器布局：core/schemas/data/methods/web）
 COPY core/ ./core/
 COPY schemas/ ./schemas/
 COPY data/methods/ ./data/methods/

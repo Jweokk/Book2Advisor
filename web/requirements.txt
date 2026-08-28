@@ -1,4 +1,4 @@
-# MrCao Web Advisor 运行依赖（TASK-P5）
+# Book2Advisor 运行依赖
 fastapi>=0.110
 uvicorn>=0.29
 pyyaml>=6.0

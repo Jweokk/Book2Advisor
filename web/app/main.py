@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""MrCao Web Advisor — FastAPI 入口（TASK-P5，异步任务版）。
+"""Book2Advisor — FastAPI 入口（异步任务版）。
 
 路由：
     GET    /health         健康检查（无认证，供 Docker healthcheck）

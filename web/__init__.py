@@ -1,2 +1,2 @@
 # -*- coding: utf-8 -*-
-"""MrCao Web Advisor（TASK-P5）— web 子包。"""
+"""Book2Advisor — web 子包。"""
