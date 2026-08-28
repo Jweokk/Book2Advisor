@@ -2,19 +2,15 @@
 """Book2Advisor — FastAPI 入口（异步任务版）。
 
 路由：
-    GET    /health         健康检查（无认证，供 Docker healthcheck）
-    POST   /api/auth       密码登录（无认证，签发会话 cookie）
+    GET    /health         健康检查（供 Docker healthcheck）
     POST   /api/ask        提交问题 → 立即返回 {task_id}（后台异步推理，不阻塞）
     GET    /api/task/<id>  查询任务状态 {status: pending|running|done|error, result?}
     GET    /{path:path}    静态文件 catch-all（必须放在所有 API 路由之后）
 
-异步化动机：/api/ask 的 run_chain 平均 60-80s，波动可超 100s —— Cloudflare
-边缘网关对源站的硬超时是 100s（免费版不可调），同步模式偶发 524「请求失败」。
-改为提交即返回 task_id，前端轮询结果，彻底绕开 CF 100s 限制。
+异步化动机：/api/ask 的 run_chain 平均 60-80s，波动可超 100s —— 提交即返回
+task_id，前端轮询结果，避免同步长连接被网关超时中断。
 
 任务存储：进程内 dict（单容器够用）；任务带创建时间，超过 30 分钟清理。
-
-启动约束：ADVISOR_PASSWORD 环境变量必须已设置，否则启动即报错（fail-fast）。
 """
 
 import logging
@@ -27,15 +23,12 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 
-from . import advisor, auth
+from . import advisor
 
-# 启动即校验：ADVISOR_PASSWORD 未设置直接抛错，uvicorn 无法启动
-auth.validate_config()
 
 logger = logging.getLogger("book2advisor.web")
 
-app = FastAPI(title="MrCao Web Advisor", docs_url=None, redoc_url=None, openapi_url=None)
-app.add_middleware(auth.SessionAuthMiddleware)
+app = FastAPI(title="Book2Advisor", docs_url=None, redoc_url=None, openapi_url=None)
 
 # ---------- 异步任务存储（进程内） ----------
 # {task_id: {"status": ..., "created": float, "result": dict|None, "error": str|None, "question": str}}
@@ -71,12 +64,6 @@ def _run_task(task_id: str, question: str) -> None:
 def health():
     """无认证健康检查（供 Docker healthcheck）。"""
     return {"status": "ok"}
-
-
-@app.post("/api/auth")
-async def api_auth(request: Request):
-    """密码登录：成功返回 200 + Set-Cookie，失败返回 401。"""
-    return await auth.login(request)
 
 
 async def _read_json(request: Request) -> dict:
@@ -143,8 +130,6 @@ STATIC_DIR = Path(__file__).resolve().parent / "static"
 @app.get("/{path:path}", include_in_schema=False)
 def static_files(path: str):
     """静态文件服务：/ → index.html；防目录穿越；404 返回中文 JSON。
-
-    Cache-Control 由 SessionAuthMiddleware 统一注入（no-cache, no-store）。
     """
     filename = "index.html" if path in ("", "/") else path
     target = (STATIC_DIR / filename).resolve()

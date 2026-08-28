@@ -46,7 +46,14 @@ TRACE_SECTIONS = [
 
 
 def load_method_model(path: str | Path) -> dict:
-    """步骤1：加载 Method Model（yaml.safe_load）。"""
+    """步骤1：加载 Method Model（yaml.safe_load）。
+
+    METHOD_MODEL 未设置（None）时给出友好提示。
+    """
+    if path is None:
+        raise FileNotFoundError(
+            "Method Model 未指定：请设置环境变量 METHOD_MODEL（指向编译好的方法模型 yaml，见 README）"
+        )
     path = Path(path)
     if not path.is_file():
         raise FileNotFoundError(f"Method Model 文件不存在：{path}")

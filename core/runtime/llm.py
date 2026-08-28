@@ -3,7 +3,7 @@
 Method Advisor — DeepSeek LLM 封装。
 
 职责：
-    1. API key 读取：环境变量 DEEPSEEK_API_KEY → ~/.book2advisor/tokens.env（KEY=VALUE 格式，取最后一个非空值）
+    1. API key 读取：环境变量 DEEPSEEK_API_KEY → 项目根 .env 文件（KEY=VALUE 格式）
     2. OpenAI 兼容调用：base_url=https://api.deepseek.com/v1，model=deepseek-v4-flash
     3. 60s 超时 + 指数退避重试：429 / 500 / 502 / 503 / 超时 → 最多重试 3 次（1s / 2s / 4s）
        —— 区分超时（TimeoutError 类）与 HTTP 状态错误（HTTPStatusError 类）单独处理
@@ -31,17 +31,17 @@ class LLMError(Exception):
 
 
 def load_api_key() -> str | None:
-    """按顺序读取 API key：环境变量 DEEPSEEK_API_KEY → ~/.book2advisor/tokens.env。
+    """按顺序读取 API key：环境变量 DEEPSEEK_API_KEY → 项目根 .env 文件。
 
     本函数及所有调用方都严禁打印 key 内容；未配置时返回 None。
     """
     key = os.environ.get("DEEPSEEK_API_KEY", "")
     if key.strip():
         return key.strip()
-    tokens_path = Path.home() / ".book2advisor" / "tokens.env"
-    if tokens_path.is_file():
-        # KEY=VALUE 格式，逐行解析；同名键取最后一个非空值
-        for line in tokens_path.read_text(encoding="utf-8").splitlines():
+    # 回退：项目根 .env（KEY=VALUE 格式，逐行解析；同名键取最后一个非空值）
+    env_path = Path(__file__).resolve().parent.parent.parent / ".env"
+    if env_path.is_file():
+        for line in env_path.read_text(encoding="utf-8").splitlines():
             line = line.strip()
             if not line or line.startswith("#") or "=" not in line:
                 continue
@@ -96,7 +96,7 @@ class DeepSeekClient:
                  model: str = DEEPSEEK_MODEL) -> None:
         self.api_key = api_key or load_api_key()
         if not self.api_key:
-            raise LLMError(f"{KEY_HINT}（未在环境变量 DEEPSEEK_API_KEY 或 ~/.book2advisor/tokens.env 中找到）")
+            raise LLMError(f"{KEY_HINT}（未在环境变量 DEEPSEEK_API_KEY 或项目根 .env 中找到）")
         self.model = model
         # max_retries=0：禁用 SDK 内置重试，由本类按指数退避策略自行控制
         self._client = openai.OpenAI(

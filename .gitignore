@@ -2,7 +2,6 @@
 .env
 *.env
 !.env.example
-tokens.env
 
 # 版权语料与原始数据
 data/raw/

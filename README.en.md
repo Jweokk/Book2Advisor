@@ -1,5 +1,7 @@
 # Book2Advisor — Turn a person's methodology into an AI advisor you can consult anytime
 
+> **English** | [中文](README.md)
+
 > Feed in a person's books, articles, speeches, interviews and cases — get back a **traceable, inferential** "Personal Methodology Advisor" as a web app.
 > It answers not just *"what did this person say"* — but **"how would this person think, following their method."**
 
@@ -81,7 +83,6 @@ pip install -r web/requirements.txt
 # 2. Configure environment
 cp .env.example .env
 #    Edit .env: DEEPSEEK_API_KEY (DeepSeek, OpenAI-compatible)
-#              ADVISOR_PASSWORD (web login password)
 #              METHOD_MODEL (path to the compiled method model — required, see steps 3/4)
 
 # 3. Convert corpus (book/document → markdown)
@@ -94,7 +95,7 @@ python3 scripts/validate_schema.py data/methods/<person>/<model>.yaml
 cd web && uvicorn app.main:app --host 0.0.0.0 --port 8000
 # or Docker: docker compose -f web/docker-compose.yml up -d --build
 
-# 6. Open http://localhost:8000 in a browser, log in, and ask
+# 6. Open http://localhost:8000 in a browser and ask
 ```
 
 > CLI mode: `python3 scripts/ask.py "your question"` (loads METHOD_MODEL or the default model).
@@ -107,7 +108,7 @@ core/                   # Core code
   runtime/              #   Runtime: 8-step inference chain (ask.py / llm.py / prompts.py)
 schemas/                # Person Method Model Schema (JSON Schema, 9 entity types)
 scripts/                # CLI: convert / validate_schema / ask / gen_triggers
-web/                    # Web advisor: FastAPI + vanilla frontend (login + Method Trace view)
+web/                    # Web advisor: FastAPI + vanilla frontend (Method Trace view)
 tests/                  # pytest (14 cases: schema / runtime / localization)
 docs/                   # Methodology docs (corpus admission standards, etc.)
 data/
@@ -116,12 +117,6 @@ data/
 evaluations/            # 40-question evaluation sets & scoring reports (runtime artifacts)
 ```
 
-## Evaluation results
-
-- **40-question evaluation set** (5 question types spanning in-book dilemmas to novel out-of-book problems); each person graded with an **independently written rubric** (anti-circular-reasoning). Two validation persons both averaged **8.5+ / 10**
-- **Method Differentiation validated**: for the same question (e.g. "how to contract during a crisis", "how to handle legacy executives"), two persons produced **fundamentally different diagnostic paths** (one answers "verify with first-hand data, watch the macro"; the other answers "cash-flow lifeline, organizational mechanics") — zero code changes, only the Method Model was swapped
-- **Evidence authenticity**: 200+ evidence quotes verified against source text (3-level matching: head / mid / full-text); fabricated citations are zero-tolerance and were caught & fixed during development
-- **Version regression**: multi-source fusion versions (v0.1→v0.4) evaluated without degradation; combination-type questions improved significantly
 
 ## Acknowledgements
 
@@ -131,8 +126,6 @@ This project references the following open-source projects and tools:
 - **[anydoc](https://www.npmjs.com/package/anydoc)** — document converter (office/text PDF → markdown)
 - **[markitdown](https://github.com/microsoft/markitdown)** — fallback converter
 - **[MinerU](https://github.com/opendatalab/MinerU)** — scanned-PDF conversion
-- **[DeepSeek API](https://platform.deepseek.com/)** — default LLM inference service (OpenAI-compatible; replaceable)
-
 ## License
 
 MIT

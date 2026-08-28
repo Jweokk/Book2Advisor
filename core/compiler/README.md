@@ -1,6 +1,6 @@
-# core/compiler — 编译层（占位，P1 不实现）
+# core/compiler — 编译层
 
-未来职责：
+职责：
 
 - **原则提炼**：多书 + 访谈 + 演讲 + 案例 → 统一方法论（Method Fusion）
 - **证据加权**：观点跨源同现 → 置信度（Evidence Weighting）

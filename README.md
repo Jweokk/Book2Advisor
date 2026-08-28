@@ -1,5 +1,7 @@
 # Book2Advisor — 把一个人的方法论，变成可以随时咨询的 AI 顾问
 
+> **[English](README.en.md) | 中文**
+
 > 输入一个人的书、文章、演讲、访谈与案例，输出一个**可追溯、可推演**的「人物方法论顾问」——一个 Web 应用。
 > 它回答的不只是"这个人说过什么"，而是——**按这个人的方法，他会怎么想**。
 
@@ -78,7 +80,6 @@ pip install -r web/requirements.txt
 # 2. 配置环境变量
 cp .env.example .env
 #    编辑 .env：DEEPSEEK_API_KEY（DeepSeek，OpenAI 兼容接口）
-#              ADVISOR_PASSWORD（Web 登录密码）
 #              METHOD_MODEL（方法模型路径，必填——见步骤 3/4 编译生成）
 
 # 3. 转换语料（书/文档 → markdown）
@@ -91,7 +92,7 @@ python3 scripts/validate_schema.py data/methods/<person>/<model>.yaml
 cd web && uvicorn app.main:app --host 0.0.0.0 --port 8000
 # 或 Docker：docker compose -f web/docker-compose.yml up -d --build
 
-# 6. 浏览器访问 http://localhost:8000 ，输入密码登录，开始咨询
+# 6. 浏览器访问 http://localhost:8000 ，开始咨询
 ```
 
 > CLI 方式：`python3 scripts/ask.py "你的问题"`（自动加载 METHOD_MODEL 或默认模型）。
@@ -104,7 +105,7 @@ core/                   # 核心代码
   runtime/              #   运行时：8 步推理链（ask.py / llm.py / prompts.py）
 schemas/                # Person Method Model Schema（JSON Schema，9 类实体）
 scripts/                # CLI：convert / validate_schema / ask / gen_triggers
-web/                    # Web Advisor：FastAPI + 原生前端（密码登录 + Method Trace 展示）
+web/                    # Web Advisor：FastAPI + 原生前端（Method Trace 展示）
 tests/                  # pytest（14 用例：schema 校验 / 运行时 / 中文化）
 docs/                   # 方法论文档（语料准入标准等）
 data/
@@ -113,12 +114,6 @@ data/
 evaluations/            # 40 题评估集与评分报告（运行产物）
 ```
 
-## 评估结果
-
-- **40 题评估集**（横跨书内困境到书外新问题 5 类题型），每位人物使用**独立编写的评分标准**（rubric，防循环论证），两位验证人物平均分 **8.5+ / 10**
-- **Method Differentiation 成立**：同一问题（如"危机收缩""老功臣处理"），两位人物产出**完全不同的诊断路径**（一位答"亲证数据、观宏观"，一位答"现金流命脉、组织机制"）——核心代码零改动，只换 Method Model
-- **Evidence 真实性**：累计 200+ 条证据全部回原文核对（前 20 字 → 中段 → 全文三级匹配），发现并修复的 LLM 编造引用为零容忍
-- **版本回归**：多源融合逐版（v0.1→v0.4）评估不退化，组合类题型显著提升
 
 ## 致谢
 
@@ -128,8 +123,6 @@ evaluations/            # 40 题评估集与评分报告（运行产物）
 - **[anydoc](https://www.npmjs.com/package/anydoc)** — 文档转换器（office/文本 PDF → markdown）
 - **[markitdown](https://github.com/microsoft/markitdown)** — 回退转换器
 - **[MinerU](https://github.com/opendatalab/MinerU)** — 扫描型 PDF 转换
-- **[DeepSeek API](https://platform.deepseek.com/)** — 默认模型推理服务（OpenAI 兼容接口，可替换）
-
 ## License
 
 MIT

@@ -3,7 +3,7 @@
 
 原样调用 core/runtime/ask.run_chain（禁止修改 core/ 任何文件）：
     - client 传 None：run_chain 内部自建 DeepSeekClient()，API key 自动从
-      环境变量 DEEPSEEK_API_KEY 或 ~/.book2advisor/tokens.env 读取（逻辑见 llm.py）
+      DEEPSEEK_API_KEY 读取（逻辑见 core/runtime/llm.py）
     - 返回 8 段 Method Trace 的结构化字典，/api/ask 原样转 JSON 返回
 """
 

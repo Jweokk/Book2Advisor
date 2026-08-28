@@ -201,7 +201,7 @@ button:hover:not(:disabled) { filter: brightness(1.08); }
 }
 .annotation-line { margin: 0 0 6px; }
 
-/* ---------- 登录页 ---------- */
+/* ---------- 辅助样式 ---------- */
 .login-body {
   display: flex;
   min-height: 100vh;

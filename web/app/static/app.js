@@ -365,7 +365,7 @@ async function submitQuestion() {
       body: JSON.stringify({ question: question })
     });
     if (submitResp.status === 401) {
-      window.location.href = "/login.html";  // 会话失效 → 回登录页
+      showError("未授权（401）");
       return;
     }
     var submitData = {};
@@ -387,7 +387,7 @@ async function submitQuestion() {
       await new Promise(function (r) { setTimeout(r, 2500); });
       var pollResp = await fetch("/api/task/" + taskId, { cache: "no-store" });
       if (pollResp.status === 401) {
-        window.location.href = "/login.html";
+        showError("未授权（401）");
         return;
       }
       var pollData = {};

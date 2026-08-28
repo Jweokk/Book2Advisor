@@ -1,8 +1,8 @@
 # Book2Advisor — Docker Compose 模板（通用）
 # 构建上下文 = 项目根；Dockerfile 位于 web/Dockerfile。
 #
-# 用法（密码与 API key 必须通过 .env 提供，禁止硬编码）：
-#   cp .env.example .env   # 填入 ADVISOR_PASSWORD / DEEPSEEK_API_KEY
+# 用法（API key 必须通过 .env 提供，禁止硬编码）：
+#   cp .env.example .env   # 填入 DEEPSEEK_API_KEY / METHOD_MODEL
 #   docker compose -f web/docker-compose.yml up -d --build
 services:
   advisor:
