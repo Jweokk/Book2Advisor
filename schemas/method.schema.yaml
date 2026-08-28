@@ -1,0 +1,339 @@
+# ============================================================
+# Method Advisor — Person Method Model Schema v0.1
+# 人物方法论模型数据校验 Schema（JSON Schema draft-07）
+#
+# 覆盖 9 类实体：
+#   person / source / principle / rule / case /
+#   diagnostic / evidence / tension / evolution
+#
+# 字段命名保持英文 snake_case；注释为中文。
+# 顶层文档必须包含 method_version（当前 v0.1）。
+# 实体允许扩展额外字段（additionalProperties 未限制），
+# 顶层文档则严格限制为已定义的 9 类实体 + 版本号。
+# ============================================================
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://method-advisor.local/schemas/method.schema.yaml#v0.2"
+title: "Person Method Model Schema v0.2"
+description: "人物方法论模型（Person Method Model）数据校验 Schema，覆盖 9 类实体。v0.2：principle 新增 trigger 字段（基于触发场景设计）。"
+type: object
+additionalProperties: false
+required:
+  - method_version
+  - person
+
+properties:
+  # 版本号：编译/运行时逻辑据此做兼容性检查（如 v0.1）
+  method_version:
+    type: string
+    minLength: 1
+    description: "模型版本号，如 v0.1"
+
+  # ---------- 实体 1：person（人物） ----------
+  person:
+    $ref: "#/definitions/person"
+
+  # ---------- 实体 2：source（语料来源） ----------
+  sources:
+    type: array
+    minItems: 1
+    items:
+      $ref: "#/definitions/source"
+
+  # ---------- 实体 3：principle（核心原则） ----------
+  principles:
+    type: array
+    minItems: 1
+    items:
+      $ref: "#/definitions/principle"
+
+  # ---------- 实体 4：rule（决策规则） ----------
+  rules:
+    type: array
+    items:
+      $ref: "#/definitions/rule"
+
+  # ---------- 实体 5：case（案例） ----------
+  cases:
+    type: array
+    minItems: 1
+    items:
+      $ref: "#/definitions/case"
+
+  # ---------- 实体 6：diagnostic（诊断路径） ----------
+  diagnostics:
+    type: array
+    items:
+      $ref: "#/definitions/diagnostic"
+
+  # ---------- 实体 7：evidence（证据） ----------
+  # 不独立出现在顶层，而是内嵌于 principle / rule（见 definitions.evidence）
+
+  # ---------- 实体 8：tension（原则冲突） ----------
+  tensions:
+    type: array
+    items:
+      $ref: "#/definitions/tension"
+
+  # ---------- 实体 9：evolution（思想演变） ----------
+  evolution:
+    type: array
+    items:
+      $ref: "#/definitions/evolution"
+
+definitions:
+  person:
+    type: object
+    required: [id, name, domain]
+    properties:
+      id:
+        type: string
+        minLength: 1
+        description: "人物唯一 ID（snake_case，如 jack-welch）"
+      name:
+        type: string
+        minLength: 1
+        description: "人物显示名"
+      domain:
+        type: string
+        minLength: 1
+        description: "领域（自由文本，如 企业管理）"
+      brief:
+        type: string
+        description: "人物档案（立场/风格/时代背景，可选）"
+
+  source:
+    type: object
+    required: [id, type, title, file, date]
+    properties:
+      id:
+        type: string
+        minLength: 1
+        description: "来源唯一 ID（如 winning）"
+      type:
+        enum: [book, article, speech, case]
+        description: "语料类型"
+      title:
+        type: string
+        minLength: 1
+        description: "标题"
+      file:
+        type: string
+        minLength: 1
+        description: "转换后的 markdown 文件相对路径"
+      date:
+        anyOf:
+          - type: string
+          - type: integer
+        description: "出版/发布年份或日期"
+
+  evidence:
+    type: object
+    required: [source, loc, quote, level]
+    properties:
+      source:
+        type: string
+        minLength: 1
+        description: "引用 source.id（须在 sources 中存在，由校验脚本跨实体检查）"
+      loc:
+        type: string
+        minLength: 1
+        description: "定位信息，形如 ch2 或页码"
+      quote:
+        type: string
+        minLength: 1
+        description: "原文摘录"
+      level:
+        enum: [E1, E2, E3, E4, E5]
+        description: "证据强度分级：E1 最弱（单次提及）～ E5 最强（跨源同现+原文印证）"
+
+  principle:
+    type: object
+    required: [id, statement, confidence, evidence]
+    properties:
+      id:
+        type: string
+        minLength: 1
+        description: "原则唯一 ID（如 candor）"
+      statement:
+        type: string
+        minLength: 1
+        description: "原则陈述（一句话）"
+      confidence:
+        enum: [high, medium, low]
+        description: "置信度"
+      evidence:
+        type: array
+        minItems: 1
+        items:
+          $ref: "#/definitions/evidence"
+        description: "证据链（至少 1 条）"
+      tension_with:
+        type: array
+        items:
+          type: string
+          minLength: 1
+        description: "与之冲突的原则 ID 列表（可选，计划书草案字段）"
+      trigger:
+        type: object
+        description: "触发场景（触发场景设计）：原则在什么情境下会被激活。scenes/signals 至少填一个"
+        required: [scenes, signals]
+        properties:
+          scenes:
+            type: array
+            minItems: 1
+            items:
+              type: string
+              minLength: 1
+            description: "用户会在什么情境下问到这个原则（3 条左右，具体到可识别的情况）"
+          signals:
+            type: array
+            minItems: 1
+            items:
+              type: string
+              minLength: 1
+            description: "用户话里的典型信号词（中英双写可提高触发准确率）"
+          not_for:
+            type: array
+            items:
+              type: string
+              minLength: 1
+            description: "不应误触发的情况（B 边界浓缩，防吸铁石原则乱入）"
+
+  rule:
+    type: object
+    required: [id, trigger, diagnose, decisions, exceptions, evidence]
+    properties:
+      id:
+        type: string
+        minLength: 1
+        description: "规则唯一 ID"
+      trigger:
+        type: array
+        minItems: 1
+        items:
+          type: string
+          minLength: 1
+        description: "触发条件列表"
+      diagnose:
+        type: array
+        minItems: 1
+        items:
+          type: string
+          minLength: 1
+        description: "诊断维度列表"
+      decisions:
+        type: object
+        additionalProperties:
+          type: string
+          minLength: 1
+        description: "决策映射 {condition: action}"
+      exceptions:
+        type: array
+        items:
+          type: string
+          minLength: 1
+        description: "例外情况列表"
+      evidence:
+        type: array
+        minItems: 1
+        items:
+          $ref: "#/definitions/evidence"
+        description: "证据链（至少 1 条）"
+
+  case:
+    type: object
+    required: [id, context, problem, decision, action, outcome, reasoning, principle]
+    properties:
+      id:
+        type: string
+        minLength: 1
+        description: "案例唯一 ID"
+      context:
+        type: string
+        minLength: 1
+        description: "背景"
+      problem:
+        type: string
+        minLength: 1
+        description: "问题"
+      decision:
+        type: string
+        minLength: 1
+        description: "决策"
+      action:
+        type: string
+        minLength: 1
+        description: "行动"
+      outcome:
+        type: string
+        minLength: 1
+        description: "结果"
+      reasoning:
+        type: string
+        minLength: 1
+        description: "推理过程"
+      principle:
+        type: array
+        minItems: 1
+        items:
+          type: string
+          minLength: 1
+        description: "引用的原则 ID 列表（须在 principles 中存在，由校验脚本跨实体检查）"
+
+  diagnostic:
+    type: object
+    required: [id, order]
+    properties:
+      id:
+        type: string
+        minLength: 1
+        description: "诊断路径唯一 ID"
+      order:
+        type: array
+        minItems: 1
+        items:
+          type: string
+          minLength: 1
+        description: "诊断步骤列表（按先后顺序）"
+
+  tension:
+    type: object
+    required: [a, b, when_a, when_b]
+    properties:
+      a:
+        type: string
+        minLength: 1
+        description: "原则 A 的 ID（须在 principles 中存在，由校验脚本跨实体检查）"
+      b:
+        type: string
+        minLength: 1
+        description: "原则 B 的 ID（须在 principles 中存在，由校验脚本跨实体检查）"
+      when_a:
+        type: string
+        description: "优先原则 A 的情境"
+      when_b:
+        type: string
+        description: "优先原则 B 的情境"
+
+  evolution:
+    type: object
+    required: [period, date_before, date_after, notes]
+    properties:
+      period:
+        type: string
+        minLength: 1
+        description: "时期标签（自由文本，如 early / late / 2000s）"
+      date_before:
+        anyOf:
+          - type: string
+          - type: integer
+        description: "该时期起点（年份或日期）"
+      date_after:
+        anyOf:
+          - type: string
+          - type: integer
+        description: "该时期终点（年份或日期）"
+      notes:
+        type: string
+        minLength: 1
+        description: "思想演变说明"

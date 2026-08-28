@@ -1,0 +1,45 @@
+# 环境与密钥 —— 严禁提交
+.env
+*.env
+!.env.example
+tokens.env
+
+# 版权语料与原始数据
+data/raw/
+data/sources/
+
+# 运行产物（评估报告/批处理输出）
+evaluations/
+
+# 参考项目源码（book-to-skill 等 clone 目录）
+refs/
+
+# 内部计划文档 / 部署手册（不随仓库分发）
+docs/*-ABSORPTION-PLAN.md
+docs/QUICKSTART-NEW-PERSON.md
+*.bak
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+.venv/
+venv/
+
+# 编辑器/系统
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# 具体人物模型（本地保留，不随仓库分发）
+data/methods/*/*.yaml
+
+# 内部评估/提取工具（依赖具体人物语料，本地使用）
+scripts/batch_ask.py
+scripts/batch_extract_rzf.py
+scripts/batch_extract_rzf_retry.py
+scripts/score_answers.py
+scripts/diff_check.py
+scripts/validate_rzf_rubric.py

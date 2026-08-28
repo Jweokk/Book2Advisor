@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Book2Advisor · 方法论顾问</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="site-header">
+  <h1>Book2Advisor · 方法论顾问</h1>
+  <p class="subtitle">基于人物语料（书/文章/演讲/访谈）提炼的方法模型，按人物方法分析你的问题</p>
+</header>
+
+<main>
+  <!-- 第一屏：只有问题输入框 + 提交按钮，其余内容提交后渐进出现 -->
+  <section id="ask-panel" class="panel" aria-label="提问">
+    <label class="visually-hidden" for="question-input">你的问题</label>
+    <textarea id="question-input" rows="4" placeholder="我的公司有个连续亏损的业务部门，怎么办？" autofocus></textarea>
+    <button id="ask-btn" type="button">开始分析</button>
+    <p id="loading-text" class="loading hidden">正在按人物方法分析…（约 1-2 分钟）</p>
+    <p id="error-bar" class="error hidden"></p>
+  </section>
+
+  <!-- 结果区：8 段 Method Trace，提交后渲染 -->
+  <section id="result" class="result hidden" aria-live="polite"></section>
+</main>
+
+<script src="/app.js"></script>
+</body>
+</html>

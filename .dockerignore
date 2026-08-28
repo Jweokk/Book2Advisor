@@ -1,0 +1,17 @@
+# 构建上下文 = 项目根；只打包运行所需，排除一切冗余
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.git/
+.gitignore
+refs/
+docs/
+evaluations/
+data/sources/
+data/raw/
+data/.gitkeep
+data/sources/.gitkeep
+data/methods/.gitkeep
+*.md
+!web/requirements.txt

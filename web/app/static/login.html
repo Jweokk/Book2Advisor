@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录 · Book2Advisor 方法论顾问</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="login-body">
+<main class="login-card">
+  <h1>Book2Advisor · 方法论顾问</h1>
+  <p class="subtitle">请输入访问密码</p>
+  <form id="login-form" novalidate>
+    <label class="visually-hidden" for="password-input">访问密码</label>
+    <input id="password-input" type="password" placeholder="访问密码" autocomplete="current-password" autofocus required>
+    <button type="submit">登录</button>
+    <p id="login-error" class="error hidden"></p>
+  </form>
+</main>
+<script>
+"use strict";
+/* 登录页：POST /api/auth → 成功跳转 /，失败显示中文错误。无任何外部依赖。 */
+(function () {
+  var form = document.getElementById("login-form");
+  var input = document.getElementById("password-input");
+  var errEl = document.getElementById("login-error");
+  var btn = form.querySelector("button");
+
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    errEl.classList.add("hidden");
+    var password = input.value;
+    if (!password) return;
+    btn.disabled = true;
+    btn.textContent = "登录中…";
+    try {
+      var resp = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: password })
+      });
+      if (resp.ok) { window.location.href = "/"; return; }
+      var data = {};
+      try { data = await resp.json(); } catch (_) { /* 非 JSON 错误体 */ }
+      errEl.textContent = data.error || "登录失败（" + resp.status + "）";
+      errEl.classList.remove("hidden");
+    } catch (ex) {
+      errEl.textContent = "网络错误：" + ex.message;
+      errEl.classList.remove("hidden");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "登录";
+    }
+  });
+})();
+</script>
+</body>
+</html>
