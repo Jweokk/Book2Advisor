@@ -7,8 +7,9 @@
 data/raw/
 data/sources/
 
-# 运行产物（评估报告/批处理输出）
-evaluations/
+# 运行产物（评估报告/批处理输出，按人物目录）；example 模板须入库
+evaluations/*/
+!evaluations/example/
 
 # 参考项目源码（book-to-skill 等 clone 目录）
 refs/
