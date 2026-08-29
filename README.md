@@ -115,10 +115,37 @@ evaluations/            # 40 题评估集与评分报告（运行产物）
 ```
 
 
+## 方法论借鉴与独立改进
+
+Book2Advisor 在演进中吸收了「书/人 → AI 技能」方向两个开源项目的方法论，并结合自身的"可追溯 Web 顾问"形态做了独立改进：
+
+**借鉴 [cangjie-skill](https://github.com/kangarooking/cangjie-skill)（RIA-TV++ 流水线）**
+
+- **principle.trigger 触发场景设计**（scenes / signals / not_for 三段式）——解决"原则选不准"：方法定位优先按 trigger 匹配，not_for 防「万能原则」（名字沾边即乱入）误触发
+- **三重验证（V2 预测力 / V3 独特性）**——融合阶段显式门槛：淘汰"只能复述例子"与"普通聪明人也能说的常识"候选，1 重验证通过的降级为规则而非直接淘汰
+- **压力测试三组制（诱饵题 / 混淆题）**——评估不只测"答得好"，还测"会不会乱调用、会不会选错原则"
+
+**借鉴 [nuwa-skill](https://github.com/alchaincyf/nuwa-skill)（女娲）**
+
+- **边缘诚实度（超范围题）**——语料未覆盖的话题必须显式声明"此为方法外推"，斩钉截铁编造本人立场 = 0 分
+- **双 agent 盲测评分**——答题 agent 与评分 agent 分离（LLM 自评 skill 质量准确率仅约 46%），评分模型可独立指定
+- **泛问识别（GENERAL_QA 分类）**——概念讨论/闲聊不再被强行套用经营原则，改为礼貌引导用户补充具体决策场景
+- **边界声明（coverage）**——推演 prompt 强制对语料空白话题显式标注推断性质
+
+**独立改进（超越参考项目的部分）**
+
+- **交付形态**：静态 skill 文件 → 可追溯的 Web 顾问（证据 E1-E5 分级、quote 逐字可回原文、引用/推演强制分离）
+- **Method Transfer**：书外新问题按方法论结构化外推，输出可审计的 8 段 Method Trace
+- **思想演变处理**：观点张力（tensions）+ 时间线（evolution），早晚期观点冲突按时间回答，不平铺矛盾
+- **换人只换语料**：Method Model 驱动，双人物（自传体 vs 内部讲话体）零代码改动验证
+- **评估四组化**：core（正向质量）+ lures（诱饵，容错 0）+ confusions（选择唯一性）+ out-of-scope（边缘诚实度），题目/评分标准可回归对比
+
 ## 致谢
 
 本项目在设计实现中参考了以下开源项目与工具：
 
+- **[cangjie-skill](https://github.com/kangarooking/cangjie-skill)** — trigger 触发场景设计、三重验证门槛、诱饵/混淆压力测试（见上节）
+- **[nuwa-skill](https://github.com/alchaincyf/nuwa-skill)** — 边缘诚实度评分、双 agent 盲测、泛问识别、边界声明（见上节）
 - **[book-to-skill](https://github.com/virgiliojr94/book-to-skill)** — Book Compiler 层的主要参考：`structure-not-summary` 抽取规范、方法骨架轻量化、evidence 分层存储
 - **[anydoc](https://www.npmjs.com/package/anydoc)** — 文档转换器（office/文本 PDF → markdown）
 - **[markitdown](https://github.com/microsoft/markitdown)** — 回退转换器

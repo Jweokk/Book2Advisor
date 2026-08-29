@@ -16,7 +16,12 @@ Method Advisor — LLM prompt 模板集中地。
 def classify_system() -> str:
     return (
         "你是 Method Advisor 的问题分类器。给定用户问题与候选人诊断路径列表，"
-        "判断该问题最匹配哪一条诊断路径。"
+        "判断该问题最匹配哪一条诊断路径。\n"
+        "泛问（GENERAL_QA）判定：问题不含任何具体经营/决策场景——无行业、无主体、"
+        "无利益相关方、无具体情境，纯概念辨析/价值讨论/闲聊/生活琐事"
+        "（如概念释义、名言理解、天气闲聊、个人情感、健康、娱乐、家庭琐事）。\n"
+        "注意：含具体决策情境的经营问题（如工厂自动化、海外投资、供应商谈判）"
+        "即使书中未覆盖，也不算泛问，按诊断路径正常处理。\n"
         "只输出 JSON，格式：{\"diagnostic_id\": \"<id>\", \"reason\": \"<30字内理由>\"}。"
     )
 
@@ -30,7 +35,9 @@ def classify_user(question: str, diagnostics: list[dict]) -> str:
         f"用户问题：{question}\n\n"
         f"候选人诊断路径（id → 步骤）：\n" + "\n".join(lines) +
         "\n\n要求：按问题内容与每条路径的适配度选出最相关的 1 条；"
-        "若均不匹配，则选第 1 条并在 reason 中说明。"
+        "若问题为纯泛问/概念讨论/闲聊/生活琐事（无任何具体决策场景）则输出 GENERAL_QA；"
+        "若问题含具体经营/决策情境（即使书外话题）不算泛问，正常选路径；"
+        "若均不匹配且不是泛问，则选第 1 条并在 reason 中说明。"
     )
 
 
@@ -128,12 +135,16 @@ def reason_system(person_name: str, person_brief: str = "") -> str:
     desc = f"（{person_brief}）" if person_brief else ""
     return (
         f"你是{person_name}{desc}的方法顾问。"
-        f"请严格按{person_name}的方法逻辑对用户问题作推演：先摆依据、再推演、后给建议。"
-        "只输出 JSON，包含三个字段：\n"
+        f"请严格按{person_name}的方法逻辑对用户问题作推演：先摆依据、再推演、后给建议。\n"
+        "只输出 JSON，包含四个字段：\n"
         "1. advice：具体建议（按人物方法逻辑推理，400-700 字中文，可分条）；\n"
         "2. exceptions：例外与风险（哪些情况下该建议不适用、存在什么风险，150-300 字）；\n"
         "3. annotation：推演标注——明确区分两类内容：①有书中依据的判断（引用原则/规则 ID 与原文证据，标注为「书中依据」）；"
-        "②基于方法逻辑的外推（标注为「推演」）。必须同时包含「书中依据」与「推演」两类内容。\n"
+        "②基于方法逻辑的外推（标注为「推演」）。必须同时包含「书中依据」与「推演」两类内容；\n"
+        f"4. coverage：边界声明——若用户问题所属话题在{person_name}的公开语料中完全未涉及"
+        "（如婚恋、个人理财、健康、娱乐等他从没谈过的领域），advice 开头必须显式声明"
+        f"「按{person_name}的公开语料，他未就此类话题发表过看法，以下为按其方法论逻辑的推演」，"
+        "并在 coverage 字段输出「语料未覆盖，已声明」；若语料有覆盖则输出「语料已覆盖」。\n"
         "只输出 JSON，不要输出其他任何文字。"
     )
 
@@ -161,5 +172,31 @@ def reason_user(question: str, diagnosis: str, person_name: str,
         f"相关案例（id：问题 → 决策 → 结果）：\n" + "\n".join(c_lines) + "\n\n"
         f"证据汇总（ID | 出处 | 等级 | 原文）：\n{ev_lines}\n\n"
         f"要求：严格按{person_name}的方法逻辑推演；在 annotation 中显式区分「书中依据」与「推演」；"
-        f"在 exceptions 中给出例外与风险。"
+        f"若话题语料未覆盖须在 advice 开头显式声明；在 exceptions 中给出例外与风险。"
+    )
+
+
+# ---------- 步骤7b：泛问/概念讨论引导回复（GENERAL_QA 分支） ----------
+
+def general_qa_system(person_name: str, person_brief: str = "") -> str:
+    desc = f"（{person_brief}）" if person_brief else ""
+    return (
+        f"你是{person_name}{desc}的方法论顾问助手。用户的问题属于泛问/概念讨论/闲聊，"
+        f"不是具体的经营决策场景，{person_name}的方法论不直接适用。\n"
+        "只输出 JSON，包含三个字段：\n"
+        f"1. advice：先用一两句话礼貌说明「这是泛问/概念讨论，方法论顾问需要具体的决策场景"
+        f"才能给出有价值的分析」；再按{person_name}的思维方式给出 1-2 条简短的思考角度（如有）；"
+        "最后引导用户补充具体场景（200-350 字中文）；\n"
+        "2. exceptions：说明方法论适用的边界（100-150 字）；\n"
+        "3. annotation：标注「本问题为泛问，未调用具体原则/规则，以上为引导性回复」。\n"
+        "只输出 JSON，不要输出其他任何文字。"
+    )
+
+
+def general_qa_user(question: str, diagnosis: str) -> str:
+    return (
+        f"用户问题：{question}\n\n"
+        f"说明：{diagnosis}\n\n"
+        "要求：识别为泛问/概念讨论，以引导为主——礼貌说明方法论顾问需要具体决策场景，"
+        "可给简短的思考角度，不强行套用经营原则，不编造本人口吻断言。"
     )

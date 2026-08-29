@@ -9,6 +9,7 @@ Method Runtime 集成测试（真实 LLM 调用，不 mock）。
     - test_bad_key_handling：无效 key → 明确中文报错、不崩溃、输出不含 key 字符串
 """
 
+import os
 import re
 import sys
 from pathlib import Path
@@ -33,8 +34,12 @@ def _run(question: str) -> dict:
 
 
 def test_ask_direct():
-    """A 类题：输出含全部 8 段标题、证据来源非空、含 [第X章] 引用。"""
-    result = _run("人物怎么看待诚信经营？")
+    """A 类题：输出含全部 8 段标题、证据来源非空、含 [第X章] 引用。
+
+    注意：题目须为具体决策场景（纯观念问如"怎么看待诚信经营"会被泛问分类
+    GENERAL_QA 识别并走引导分支——那是预期行为，不是 A 类场景）。
+    """
+    result = _run("合作方在招标时低于成本价中标，还私下送礼套路我，我该怎么守住诚信底线？")
     trace = result["trace"]
 
     # 8 段标题齐全
@@ -52,8 +57,11 @@ def test_ask_direct():
 
 
 def test_ask_novel():
-    """C 类题：推演标注段同时包含「书中依据」与「推演」两类内容。"""
-    result = _run("人物会怎么看 AI 大规模替代工厂工人？")
+    """C 类题（书外新问题，含具体决策情境）：推演标注段同时包含「书中依据」与「推演」。
+
+    注意：须含具体决策情境（如"我的工厂"），纯"怎么看"式观点问会被 GENERAL_QA 识别走引导分支。
+    """
+    result = _run("我的工厂要不要全面自动化？AI 会不会大规模取代工人？")
     annotation = result["reasoning"]["annotation"]
 
     assert "书中依据" in annotation, "推演标注缺少「书中依据」内容"

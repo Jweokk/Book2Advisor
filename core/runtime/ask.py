@@ -35,7 +35,7 @@ METHOD_MODEL_PATH = Path(os.environ["METHOD_MODEL"]) if os.environ.get("METHOD_M
 # Method Trace 的 8 段标题（测试按此断言）
 TRACE_SECTIONS = [
     "## 问题理解",
-    "## 诊断路径（按人物方法，先看什么）",
+    "## 诊断路径（按",  # 前缀匹配：build_trace 动态插入 {person_name}先生
     "## 采用的方法（原则 + 规则，逐条带证据引用 [第X章]）",
     "## 相关案例（1-3 个，说明为什么相关）",
     "## 建议",
@@ -160,56 +160,72 @@ def run_chain(model: dict, question: str, client=None, verbose: bool = False) ->
     if diagnostic["id"] != classification["diagnostic_id"]:
         classification["fallback"] = True
 
-    # ---------- 步骤3：诊断具体化 ----------
-    def _diagnose():
-        messages = [
-            {"role": "system", "content": prompts.diagnose_system(_pname, _pbrief)},
-            {"role": "user", "content": prompts.diagnose_user(question, diagnostic)},
-        ]
-        return _chat(client, messages, "步骤3 诊断", verbose,
-                     temperature=0.4, max_tokens=2000).strip()
+    # 泛问/概念讨论分支标志（classify 输出 GENERAL_QA 时走引导回复，不套经营原则）
+    _is_general = classification["diagnostic_id"] == "GENERAL_QA"
 
-    diagnosis = _guard("诊断", _diagnose)
+    # ---------- 步骤3：诊断具体化 ----------
+    if _is_general:
+        diagnosis = (f"该问题属于泛问/概念讨论/闲聊，不是具体的经营决策场景。"
+                     f"{_pname}的方法论针对经营与处世决策，需要具体场景才能给出有价值的分析。")
+    else:
+        def _diagnose():
+            messages = [
+                {"role": "system", "content": prompts.diagnose_system(_pname, _pbrief)},
+                {"role": "user", "content": prompts.diagnose_user(question, diagnostic)},
+            ]
+            return _chat(client, messages, "步骤3 诊断", verbose,
+                         temperature=0.4, max_tokens=2000).strip()
+
+        diagnosis = _guard("诊断", _diagnose)
 
     # ---------- 步骤4：方法定位 ----------
-    def _select_method():
-        messages = [
-            {"role": "system", "content": prompts.select_method_system(_pname)},
-            {"role": "user", "content": prompts.select_method_user(
-                question, diagnosis, principles_all, rules_all)},
-        ]
-        reply = _chat(client, messages, "步骤4 方法定位", verbose,
-                      temperature=0.1, max_tokens=6000)
-        p_ids = _select_ids(reply, "principles", "方法定位")
-        r_ids = _select_ids(reply, "rules", "方法定位")
-        return p_ids, r_ids
+    if _is_general:
+        p_ids, r_ids = [], []
+    else:
+        def _select_method():
+            messages = [
+                {"role": "system", "content": prompts.select_method_system(_pname)},
+                {"role": "user", "content": prompts.select_method_user(
+                    question, diagnosis, principles_all, rules_all)},
+            ]
+            reply = _chat(client, messages, "步骤4 方法定位", verbose,
+                          temperature=0.1, max_tokens=6000)
+            p_ids = _select_ids(reply, "principles", "方法定位")
+            r_ids = _select_ids(reply, "rules", "方法定位")
+            return p_ids, r_ids
 
-    p_ids, r_ids = _guard("方法定位", _select_method)
+        p_ids, r_ids = _guard("方法定位", _select_method)
 
     # 过滤出模型中的完整对象（防御无效 id：LLM 幻觉出的 id 直接丢弃）
     selected_principles = [p for p in principles_all if p["id"] in p_ids][:5]
     selected_rules = [r for r in rules_all if r["id"] in r_ids][:3]
     # 允许「宁缺毋滥」：原则可为空（只靠规则回答）；但原则与规则都为空时，
     # 降级为第一条原则兜底并标注（避免 500——用户问超出方法论覆盖范围的问题时也要有回答）
+    # ⚠️ 泛问分支（GENERAL_QA）除外：明确走引导回复，不兜底、不套原则
     if not selected_principles and not selected_rules:
-        if principles_all:
+        if _is_general:
+            pass
+        elif principles_all:
             selected_principles = [principles_all[0]]
             _fallback_principle = True
         else:
             raise RuntimeError("Method Model 无任何原则，无法回答")
 
     # ---------- 步骤5：案例检索 ----------
-    def _select_cases():
-        messages = [
-            {"role": "system", "content": prompts.select_cases_system(_pname)},
-            {"role": "user", "content": prompts.select_cases_user(
-                question, diagnosis, [p["id"] for p in selected_principles], cases_all)},
-        ]
-        reply = _chat(client, messages, "步骤5 案例检索", verbose,
-                      temperature=0.1, max_tokens=3000)
-        return _select_ids(reply, "cases", "案例检索")
+    if _is_general:
+        c_ids = []
+    else:
+        def _select_cases():
+            messages = [
+                {"role": "system", "content": prompts.select_cases_system(_pname)},
+                {"role": "user", "content": prompts.select_cases_user(
+                    question, diagnosis, [p["id"] for p in selected_principles], cases_all)},
+            ]
+            reply = _chat(client, messages, "步骤5 案例检索", verbose,
+                          temperature=0.1, max_tokens=3000)
+            return _select_ids(reply, "cases", "案例检索")
 
-    c_ids = _guard("案例检索", _select_cases)
+        c_ids = _guard("案例检索", _select_cases)
     selected_cases = [c for c in cases_all if c["id"] in c_ids][:3]
 
     # ---------- 步骤6：证据收集（纯代码，汇总选中 principle/rule 的 evidence[]） ----------
@@ -224,43 +240,63 @@ def run_chain(model: dict, question: str, client=None, verbose: bool = False) ->
                 )
 
     # ---------- 步骤7：推演 ----------
-    def _reason():
-        messages = [
-            {"role": "system", "content": prompts.reason_system(_pname, _pbrief)},
-            {"role": "user", "content": prompts.reason_user(
-                question, diagnosis, _pname, selected_principles, selected_rules,
-                selected_cases, evidence_rows)},
-        ]
-        # 推演输出很长，LLM 偶发 JSON 格式错误（截断/多余逗号）——重试 1 次
-        last_exc = None
-        for attempt in range(2):
-            try:
-                reply = _chat(client, messages, "步骤7 推演", verbose,
-                              temperature=0.4, max_tokens=16000)
-                data = extract_json(reply)
-                break
-            except LLMError as exc:
-                last_exc = exc
-                if attempt == 0:
-                    continue
-                raise
-        else:
-            raise last_exc  # 理论上不可达
-        missing = [k for k in ("advice", "exceptions", "annotation") if not data.get(k)]
-        if missing:
-            raise LLMError(f"步骤「推演」返回 JSON 缺少字段 {missing}：{reply[:200]}")
-        # LLM 输出格式漂移防御：字段可能是嵌套 dict/list（如 annotation 被返回成对象），统一转文本
-        def _to_text(v) -> str:
-            if isinstance(v, str):
-                return v.strip()
-            if isinstance(v, (dict, list)):
-                return json.dumps(v, ensure_ascii=False)
-            return str(v)
-        return {"advice": _to_text(data["advice"]),
-                "exceptions": _to_text(data["exceptions"]),
-                "annotation": _to_text(data["annotation"])}
+    def _to_text(v) -> str:
+        """LLM 输出格式漂移防御：字段可能是嵌套 dict/list（如 annotation 被返回成对象），统一转文本。"""
+        if isinstance(v, str):
+            return v.strip()
+        if isinstance(v, (dict, list)):
+            return json.dumps(v, ensure_ascii=False)
+        return str(v)
 
-    reasoning = _guard("推演", _reason)
+    if _is_general:
+        # 泛问引导：不调用具体原则/规则/案例，识别泛问并引导用户给具体场景
+        def _general_reply():
+            messages = [
+                {"role": "system", "content": prompts.general_qa_system(_pname, _pbrief)},
+                {"role": "user", "content": prompts.general_qa_user(question, diagnosis)},
+            ]
+            reply = _chat(client, messages, "步骤7b 泛问引导", verbose,
+                          temperature=0.4, max_tokens=8000)
+            data = extract_json(reply)
+            missing = [k for k in ("advice", "exceptions", "annotation") if not data.get(k)]
+            if missing:
+                raise LLMError(f"步骤「泛问引导」返回 JSON 缺少字段 {missing}：{reply[:200]}")
+            return {"advice": _to_text(data["advice"]),
+                    "exceptions": _to_text(data["exceptions"]),
+                    "annotation": _to_text(data["annotation"])}
+
+        reasoning = _guard("泛问引导", _general_reply)
+    else:
+        def _reason():
+            messages = [
+                {"role": "system", "content": prompts.reason_system(_pname, _pbrief)},
+                {"role": "user", "content": prompts.reason_user(
+                    question, diagnosis, _pname, selected_principles, selected_rules,
+                    selected_cases, evidence_rows)},
+            ]
+            # 推演输出很长，LLM 偶发 JSON 格式错误（截断/多余逗号）——重试 1 次
+            last_exc = None
+            for attempt in range(2):
+                try:
+                    reply = _chat(client, messages, "步骤7 推演", verbose,
+                                  temperature=0.4, max_tokens=16000)
+                    data = extract_json(reply)
+                    break
+                except LLMError as exc:
+                    last_exc = exc
+                    if attempt == 0:
+                        continue
+                    raise
+            else:
+                raise last_exc or LLMError("步骤「推演」LLM 调用连续失败，无可用错误信息")  # 理论上不可达
+            missing = [k for k in ("advice", "exceptions", "annotation") if not data.get(k)]
+            if missing:
+                raise LLMError(f"步骤「推演」返回 JSON 缺少字段 {missing}：{reply[:200]}")
+            return {"advice": _to_text(data["advice"]),
+                    "exceptions": _to_text(data["exceptions"]),
+                    "annotation": _to_text(data["annotation"])}
+
+        reasoning = _guard("推演", _reason)
 
     # ---------- 步骤7.5：输出中文化后处理 ----------
     # 1) LLM 引用的是英文 id → 替换为中文名（推演标注/建议中的 jujiao、r-standard-conflict 等）

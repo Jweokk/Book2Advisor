@@ -118,10 +118,37 @@ evaluations/            # 40-question evaluation sets & scoring reports (runtime
 ```
 
 
+## Methodology influences and independent improvements
+
+Book2Advisor absorbed methodology from two open-source "book/person → AI skill" projects and made independent improvements shaped by its own "traceable Web advisor" form:
+
+**From [cangjie-skill](https://github.com/kangarooking/cangjie-skill) (RIA-TV++ pipeline)**
+
+- **`principle.trigger` scene design** (scenes / signals / not_for) — fixes "wrong principle picked": method selection matches triggers first; `not_for` blocks "universal magnet" principles (name-only matches) from firing
+- **Triple verification (V2 predictive power / V3 distinctiveness)** — explicit fusion-stage gate: rejects "can only repeat examples" and "any smart person would say this" candidates; single-pass candidates demote to rules instead of being discarded
+- **Stress-test groups (lure / confusion questions)** — evaluation tests not just "answers well" but "does it over-fire, does it pick the wrong principle"
+
+**From [nuwa-skill](https://github.com/alchaincyf/nuwa-skill)**
+
+- **Edge honesty (out-of-scope questions)** — topics absent from the corpus must explicitly declare "this is a method-based extrapolation"; asserting the person's stance out of thin air scores 0
+- **Dual-agent blind judging** — answering agent and scoring agent are separate (LLM self-evaluation accuracy is only ~46%); the judge model is independently configurable
+- **General-question detection (GENERAL_QA classification)** — conceptual/chit-chat questions no longer get business principles forced onto them; the advisor politely guides the user to give a concrete decision scenario instead
+- **Coverage declaration** — the reasoning prompt forces an explicit "corpus does not cover this topic" note for out-of-domain questions
+
+**Independent improvements (beyond the referenced projects)**
+
+- **Delivery form**: static skill file → traceable Web advisor (E1–E5 evidence grading, verbatim quotes linkable back to the source, strict separation of "cited" vs "inferred")
+- **Method Transfer**: novel out-of-book questions are extrapolated structurally from the methodology, producing an auditable 8-section Method Trace
+- **Intellectual evolution**: tensions + evolution timeline — conflicting early/late views are answered by period, not flattened
+- **Corpus-only person switching**: Method Model driven, validated with two persons of completely different corpus shapes (autobiography vs. internal speeches) with zero code changes
+- **Four-group evaluation**: core (positive quality) + lures (zero tolerance for misfires) + confusions (unique selection) + out-of-scope (edge honesty), with regression-comparable question sets and rubrics
+
 ## Acknowledgements
 
 This project references the following open-source projects and tools:
 
+- **[cangjie-skill](https://github.com/kangarooking/cangjie-skill)** — trigger scene design, triple-verification gate, lure/confusion stress tests (see above)
+- **[nuwa-skill](https://github.com/alchaincyf/nuwa-skill)** — edge-honesty scoring, dual-agent blind judging, general-question detection, coverage declaration (see above)
 - **[book-to-skill](https://github.com/virgiliojr94/book-to-skill)** — primary reference for the Book Compiler layer: `structure-not-summary` extraction, lightweight methodology skeleton, layered evidence storage
 - **[anydoc](https://www.npmjs.com/package/anydoc)** — document converter (office/text PDF → markdown)
 - **[markitdown](https://github.com/microsoft/markitdown)** — fallback converter
