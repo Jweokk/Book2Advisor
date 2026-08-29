@@ -28,7 +28,14 @@ python3 scripts/extract_candidates.py --src data/sources/<person>/speech --out /
 
 ## 3. 融合（候选 → Method Model yaml）
 
-把 /tmp/<person>-extract/*.json 交给 LLM（或人工）汇总为 `data/methods/<person>/<model>-v0.1.yaml`，结构见 `schemas/method.schema.yaml`：
+```bash
+python3 scripts/merge_candidates.py \
+    --src /tmp/<person>-extract \
+    --person <id> --name <中文名> --domain <领域> --brief <一句话简介> \
+    --out data/methods/<person>/<model>-v0.1.yaml
+```
+
+两阶段自动融合：LLM 按三重验证门槛（下表）分组决策（合并同义/降级/淘汰）→ 脚本确定性组装 yaml（跨篇候选合并为多 evidence：跨源 ≥3 → E5，=2 → E4，单篇 → E3）并自动过 validate_schema。产物是**骨架初稿**——请人工审核后再用（尤其：补充 tensions/evolution、精修 rule 的 exceptions、核对 evidence quote）。
 
 - **同义合并、跨篇印证**：同一原则多篇出现 → 一个原则多 evidence（"聚焦"= "压强" = "城墙口" → 一个原则）
 - **实体规模参考**（薄骨架）：原则 14-20 / 规则 6-10 / 案例 8-12 / 诊断 3-5 / 张力 3-5 / 演变 3-4 段
