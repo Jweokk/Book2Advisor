@@ -79,6 +79,8 @@ book-to-skill (the reference for our Book Compiler layer) compiles a book into a
 git clone https://github.com/jweokk/Book2Advisor.git
 cd Book2Advisor
 pip install -r web/requirements.txt
+#    Optional: fallback document converter (used by convert.py when anydoc is unavailable)
+#    pip install markitdown
 
 # 2. Configure environment
 cp .env.example .env

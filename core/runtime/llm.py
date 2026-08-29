@@ -5,7 +5,7 @@ Method Advisor — DeepSeek LLM 封装。
 职责：
     1. API key 读取：环境变量 DEEPSEEK_API_KEY → 项目根 .env 文件（KEY=VALUE 格式）
     2. OpenAI 兼容调用：base_url=https://api.deepseek.com/v1，model=deepseek-v4-flash
-    3. 60s 超时 + 指数退避重试：429 / 500 / 502 / 503 / 超时 → 最多重试 3 次（1s / 2s / 4s）
+    3. 150s 超时 + 指数退避重试：429 / 500 / 502 / 503 / 超时 → 最多重试 3 次（1s / 2s / 4s）
        —— 区分超时（TimeoutError 类）与 HTTP 状态错误（HTTPStatusError 类）单独处理
     4. 异常细化：统一转中文 LLMError；严禁把 API key 打印到 stdout / stderr / 日志
 """
@@ -20,7 +20,7 @@ import openai
 # DeepSeek 服务参数
 DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
 DEEPSEEK_MODEL = "deepseek-v4-flash"
-REQUEST_TIMEOUT = 60.0          # 硬性：单次请求超时 60s
+REQUEST_TIMEOUT = 150.0         # 硬性：单次请求超时 150s（推理模型思考计入 max_tokens，16000 输出需 90-150s）
 MAX_RETRIES = 3                 # 硬性：最多重试 3 次
 RETRYABLE_STATUS = {429, 500, 502, 503}   # 硬性：可重试的 HTTP 状态码
 KEY_HINT = "API key 未配置或无效"          # 硬性：坏 key 只允许显示这句话
@@ -89,7 +89,7 @@ def extract_json(text: str) -> dict:
 
 
 class DeepSeekClient:
-    """DeepSeek（OpenAI 兼容）客户端：60s 超时 + 指数退避重试 + 中文异常。"""
+    """DeepSeek（OpenAI 兼容）客户端：150s 超时 + 指数退避重试 + 中文异常。"""
 
     def __init__(self, api_key: str | None = None,
                  base_url: str = DEEPSEEK_BASE_URL,
@@ -123,7 +123,11 @@ class DeepSeekClient:
                     temperature=temperature,
                     max_tokens=max_tokens,
                 )
-                return response.choices[0].message.content or ""
+                content = response.choices[0].message.content or ""
+                if not content.strip():
+                    # 推理模型偶发返回空（HTTP 200 但无内容）：显式报错，避免下游 JSON 解析出不可理解的错误
+                    raise LLMError("模型返回空响应（服务波动或推理超时），请重试")
+                return content
             except openai.APITimeoutError as exc:
                 # 超时（TimeoutError 类）：单独处理
                 last_error = f"请求超时（>{REQUEST_TIMEOUT:.0f}s）"

@@ -24,7 +24,7 @@ python3 scripts/extract_candidates.py --src data/sources/<person>/speech --out /
 # 每篇一个 JSON（principles/rules/cases/anti_patterns/diagnostics 候选），断点续跑
 ```
 
-注意：`max_tokens=12000` 已内置（推理模型思考吃预算，太低会截断返回空）；单篇 >45K 字符会截取前段。
+注意：`max_tokens=12000` 已内置（推理模型思考吃预算，太低会截断返回空）；单篇 >18K 字符会截取前段（超长语料请先拆分为多篇 .md）。
 
 ## 3. 融合（候选 → Method Model yaml）
 

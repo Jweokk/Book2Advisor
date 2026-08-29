@@ -76,6 +76,8 @@ book-to-skill（本项目 Book Compiler 层的参考）把书编译为 agent 可
 git clone https://github.com/jweokk/Book2Advisor.git
 cd book2advisor
 pip install -r web/requirements.txt
+#    可选：文档/语料转换回退器（convert.py 在 anydoc 不可用时自动回退）
+#    pip install markitdown
 
 # 2. 配置环境变量
 cp .env.example .env

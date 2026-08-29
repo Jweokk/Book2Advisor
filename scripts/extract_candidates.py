@@ -44,8 +44,9 @@ def extract_one(client, src_dir: Path, path: Path, out_dir: Path) -> str:
     text = path.read_text(encoding="utf-8", errors="ignore")
     # 去掉 frontmatter
     text = re.sub(r"^---\n.*?\n---\n", "", text, flags=re.S)
-    # 截断控制：单篇最多 45K 字符（长文方法论密度均匀，取前 45K；超长可后续分段）
-    text = text[:45000]
+    # 截断控制：单篇最多 18K 字符（deepseek 系推理模型对超长单次输入易返回空响应，
+    # 内部实测 ≤18K 分段提取稳定；超长语料建议先拆分为多篇 .md 再提取）
+    text = text[:18000]
     user = f"【语料标题】{fid}\n【语料正文】\n{text}"
     last_err = ""
     for attempt in range(3):

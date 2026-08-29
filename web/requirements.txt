@@ -4,3 +4,7 @@ uvicorn>=0.29
 pyyaml>=6.0
 openai>=1.30
 python-dotenv>=1.0
+jsonschema>=4.0          # scripts/validate_schema.py 方法模型校验
+
+# 可选：文档/语料转换回退器（convert.py 在 anydoc 不可用时自动回退）
+# pip install markitdown
