@@ -80,23 +80,29 @@ pip install -r web/requirements.txt
 # 2. 配置环境变量
 cp .env.example .env
 #    编辑 .env：DEEPSEEK_API_KEY（DeepSeek，OpenAI 兼容接口）
-#              METHOD_MODEL（方法模型路径，必填——见步骤 3/4 编译生成）
+#              METHOD_MODEL（方法模型路径，必填——见步骤 3-5 编译生成）
 
 # 3. 转换语料（书/文档 → markdown）
-python3 scripts/convert.py <your-book.pdf> --person jack-welch --type book
+python3 scripts/convert.py <your-book.pdf> --person <person> --type book
 
-# 4. 编译方法模型（语料 → Method Model，校验必须通过）
-python3 scripts/validate_schema.py data/methods/<person>/<model>.yaml
+# 4. 编译方法模型（语料 → 候选提取 → 融合 → Method Model，完整流程见 docs/COMPILING.md）
+python3 scripts/extract_candidates.py --src data/sources/<person>/book --out /tmp/<person>-extract
+#    （融合汇总为 data/methods/<person>/<model>-v0.1.yaml，含三重验证门槛）
 
-# 5. 启动 Web 顾问
+# 5. 校验（必须 exit 0）
+python3 scripts/validate_schema.py data/methods/<person>/<model>-v0.1.yaml
+
+# 6. 启动 Web 顾问
 cd web && uvicorn app.main:app --host 0.0.0.0 --port 8000
 # 或 Docker：docker compose -f web/docker-compose.yml up -d --build
 
-# 6. 浏览器访问 http://localhost:8000 ，开始咨询
+# 7. 浏览器访问 http://localhost:8000 ，开始咨询
 ```
 
-> CLI 方式：`python3 scripts/ask.py "你的问题"`（自动加载 METHOD_MODEL 或默认模型）。
-> 语料准入标准与编译方法论见 [docs/CORPUS-STANDARD.md](docs/CORPUS-STANDARD.md)。
+> CLI 方式：`python3 scripts/ask.py "你的问题"`（自动加载 METHOD_MODEL）。
+> 语料准入标准见 [docs/CORPUS-STANDARD.md](docs/CORPUS-STANDARD.md)，编译全流程（提取/融合/三重验证/trigger/评估）见 [docs/COMPILING.md](docs/COMPILING.md)。
+
+**评估（可选但强烈推荐）**：建 `evaluations/<person>/`（复制 `evaluations/example/` 模板并改写），跑四组评估——`batch_ask.py --person <person> --model <model.yaml> --group core|lures|confusions|out-of-scope` + `score_answers.py --person <person> --group <group>`（judge 模型独立于答题模型，双 agent 盲测）。详见 docs/COMPILING.md 第 6 节。
 
 ## 目录结构
 
@@ -104,14 +110,15 @@ cd web && uvicorn app.main:app --host 0.0.0.0 --port 8000
 core/                   # 核心代码
   runtime/              #   运行时：8 步推理链（ask.py / llm.py / prompts.py）
 schemas/                # Person Method Model Schema（JSON Schema，9 类实体）
-scripts/                # CLI：convert / validate_schema / ask / gen_triggers
+scripts/                # CLI：convert / extract_candidates / validate_schema / ask
+                        #      / gen_triggers / merge_triggers / batch_ask / score_answers
 web/                    # Web Advisor：FastAPI + 原生前端（Method Trace 展示）
-tests/                  # pytest（14 用例：schema 校验 / 运行时 / 中文化）
-docs/                   # 方法论文档（语料准入标准等）
+tests/                  # pytest（真实 LLM 集成测试：运行时 / schema / 转换单测）
+docs/                   # 方法论文档（语料准入标准 / 编译指南）
 data/
-  methods/              # 方法模型（无内置模型（具体人物模型需自行编译，见快速开始））
+  methods/              # 方法模型（无内置模型——具体人物模型需自行编译，见快速开始）
   sources/              # 语料（版权内容，不随仓库分发）
-evaluations/            # 40 题评估集与评分报告（运行产物）
+evaluations/            # 评估集：example 模板（questions/ + rubric）+ 各人物的运行产物
 ```
 
 
