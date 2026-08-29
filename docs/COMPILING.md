@@ -34,6 +34,11 @@ python3 scripts/extract_candidates.py --src data/sources/<person>/speech --out /
 - **实体规模参考**（薄骨架）：原则 14-20 / 规则 6-10 / 案例 8-12 / 诊断 3-5 / 张力 3-5 / 演变 3-4 段
 - 每个实体带中文 `name`；evidence 的 quote **逐字来自原文**（≤60 字）
 
+> ⚠️ 组装易错点（validate 会报但早知早省）：
+> - `sources` 是**顶层实体**（与 principles 平级），不是 person 的子字段
+> - `case.principle` 是原则 id 的**数组**（`[id]`）；`case.problem` 必填
+> - `evidence.source` 必须引用 `sources[].id`（跨实体引用校验）
+
 ### 融合门槛（三重验证，宁缺毋滥）
 
 每个候选原则问三句，全部通过才独立成原则：

@@ -15,10 +15,16 @@ task_id，前端轮询结果，避免同步长连接被网关超时中断。
 
 import logging
 import mimetypes
+import sys
 import threading
 import time
 import uuid
 from pathlib import Path
+
+# 项目根（web/app/main.py → 项目根），保证 `cd web && uvicorn app.main:app` 能 import core.*
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
