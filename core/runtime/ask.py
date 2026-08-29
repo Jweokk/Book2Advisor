@@ -116,7 +116,9 @@ KIND_CN = {"principle": "原则", "rule": "规则", "case": "案例", "diagnosti
 LEVEL_CN = {"E5": "极高·多源印证", "E4": "高·原文明确", "E3": "中·案例归纳", "E2": "低·合理推导", "E1": "假设性推演"}
 
 
-def run_chain(model: dict, question: str, client=None, verbose: bool = False) -> dict:
+def run_chain(model: dict, question: str, client=None, verbose: bool = False,
+             progress_callback=None) -> dict:
+    """8 步推理链。progress_callback(step) 每完成一步调用一次（step 形如 "第2/5步·问题分类"）。"""
     """执行 8 步推理链，返回含完整 Method Trace 的结果字典。"""
     from core.runtime.llm import DeepSeekClient
     client = client or DeepSeekClient()
@@ -126,6 +128,11 @@ def run_chain(model: dict, question: str, client=None, verbose: bool = False) ->
     diagnostics_all: list[dict] = model.get("diagnostics", [])
     _fallback_principle = False
     # 人物名/简介（动态：prompts 与后处理使用，不绑定具体人物）
+    def _report(step: str, idx: int) -> None:
+        """进度回调（异步任务模式：Web 前端据此显示当前推理步骤）。"""
+        if progress_callback:
+            progress_callback(f"第{idx}/5步·{step}")
+
     _pname = model.get("person", {}).get("name", "") if isinstance(model, dict) else ""
     _pbrief = model.get("person", {}).get("brief", "") if isinstance(model, dict) else ""
 
@@ -146,6 +153,7 @@ def run_chain(model: dict, question: str, client=None, verbose: bool = False) ->
         return {"diagnostic_id": diag_id, "reason": data.get("reason", "")}
 
     classification = _guard("问题分类", _classify)
+    _report("问题分类", 1)
     # 中文化：诊断路径显示名（保留 diagnostic_id 作内部引用）
     _diag = next(
         (d for d in diagnostics_all if d["id"] == classification["diagnostic_id"]), None
@@ -177,6 +185,7 @@ def run_chain(model: dict, question: str, client=None, verbose: bool = False) ->
                          temperature=0.4, max_tokens=2000).strip()
 
         diagnosis = _guard("诊断", _diagnose)
+    _report("诊断具体化", 2)
 
     # ---------- 步骤4：方法定位 ----------
     if _is_general:
@@ -195,6 +204,7 @@ def run_chain(model: dict, question: str, client=None, verbose: bool = False) ->
             return p_ids, r_ids
 
         p_ids, r_ids = _guard("方法定位", _select_method)
+    _report("方法定位", 3)
 
     # 过滤出模型中的完整对象（防御无效 id：LLM 幻觉出的 id 直接丢弃）
     selected_principles = [p for p in principles_all if p["id"] in p_ids][:5]
@@ -226,6 +236,7 @@ def run_chain(model: dict, question: str, client=None, verbose: bool = False) ->
             return _select_ids(reply, "cases", "案例检索")
 
         c_ids = _guard("案例检索", _select_cases)
+    _report("案例检索", 4)
     selected_cases = [c for c in cases_all if c["id"] in c_ids][:3]
 
     # ---------- 步骤6：证据收集（纯代码，汇总选中 principle/rule 的 evidence[]） ----------
@@ -266,6 +277,7 @@ def run_chain(model: dict, question: str, client=None, verbose: bool = False) ->
                     "annotation": _to_text(data["annotation"])}
 
         reasoning = _guard("泛问引导", _general_reply)
+        _report("推演", 5)
     else:
         def _reason():
             messages = [
@@ -297,6 +309,7 @@ def run_chain(model: dict, question: str, client=None, verbose: bool = False) ->
                     "annotation": _to_text(data["annotation"])}
 
         reasoning = _guard("推演", _reason)
+        _report("推演", 5)
 
     # ---------- 步骤7.5：输出中文化后处理 ----------
     # 1) LLM 引用的是英文 id → 替换为中文名（推演标注/建议中的 jujiao、r-standard-conflict 等）

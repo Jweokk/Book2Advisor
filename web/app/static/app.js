@@ -392,6 +392,10 @@ async function submitQuestion() {
       }
       var pollData = {};
       try { pollData = await pollResp.json(); } catch (_) { /* 忽略 */ }
+      if (pollData.progress) {
+        document.getElementById("loading-text").textContent =
+          "正在按人物方法分析…（" + pollData.progress + "）";
+      }
       if (pollData.status === "done") { result = pollData.result; break; }
       if (pollData.status === "error") {
         showError(pollData.error || "分析失败，请稍后重试");

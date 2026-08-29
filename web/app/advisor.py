@@ -17,11 +17,12 @@ logger = logging.getLogger("book2advisor.advisor")
 _model = None
 
 
-def ask(question: str) -> dict:
+def ask(question: str, progress_callback=None) -> dict:
     """执行 8 步推理链，返回完整 Method Trace 字典。"""
     global _model
     if _model is None:
         _model = load_method_model(METHOD_MODEL_PATH)
         logger.info("Method Model 已加载：%s", METHOD_MODEL_PATH)
     # client=None → run_chain 内部自建 DeepSeekClient()，本模块不接触 API key
-    return run_chain(_model, question, client=None, verbose=False)
+    return run_chain(_model, question, client=None, verbose=False,
+                     progress_callback=progress_callback)

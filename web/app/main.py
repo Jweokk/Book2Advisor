@@ -55,7 +55,10 @@ def _cleanup_tasks() -> None:
 def _run_task(task_id: str, question: str) -> None:
     """后台线程：执行 run_chain，结果写回 TASKS[task_id]。"""
     try:
-        result = advisor.ask(question)
+        result = advisor.ask(
+            question,
+            progress_callback=lambda step: TASKS[task_id].__setitem__("progress", step),
+        )
         with TASKS_LOCK:
             TASKS[task_id]["status"] = "done"
             TASKS[task_id]["result"] = result
@@ -94,6 +97,7 @@ async def api_ask(request: Request):
     with TASKS_LOCK:
         TASKS[task_id] = {
             "status": "pending",
+            "progress": "",
             "created": time.time(),
             "result": None,
             "error": None,
@@ -120,6 +124,7 @@ async def api_task_status(task_id: str):
             "task_id": task_id,
             "status": task["status"],
             "question": task["question"],
+            "progress": task.get("progress", ""),
         }
         if task["status"] == "done":
             resp["result"] = task["result"]
