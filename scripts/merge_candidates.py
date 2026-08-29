@@ -27,6 +27,13 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 from core.runtime.llm import DeepSeekClient, extract_json, LLMError
 
+CROSS_BATCH_SYSTEM = """你是方法论融合器（跨批合并）。以下是分批分组的结果（每批已按三重验证门槛分组），
+请做**跨批最终合并**：
+- 不同批中同义/近义的 group（同 type，名字或陈述指向同一方法论）→ 合并为一个 group，candidate_ids 取并集
+- 其余 group 原样保留（type/name/statement/ids 不变）
+- 仍按 V1/V2/V3 门槛：明显常识废话的 group 可改 type 为 rejected
+只输出 JSON：{"groups": [同单批格式]}。"""
+
 SYSTEM = """你是方法论融合器。把候选清单融合为「人物方法模型」的骨架。
 
 三重验证门槛（宁缺毋滥）：
@@ -130,6 +137,65 @@ def evidence_level(n_sources: int) -> str:
     return "E3"
 
 
+def _compact_groups(groups: list[dict]) -> list[dict]:
+    """group 紧凑化（只留判定所需字段，去 statement 减体积防超限）。"""
+    return [{"type": g.get("type", "rejected"), "name": g.get("name", "") or "",
+             "candidate_ids": g.get("candidate_ids", []) or []} for g in groups]
+
+
+def _cross_merge(batches: list[list[dict]], client: DeepSeekClient) -> list[dict]:
+    """多批 groups 跨批合并（4 路扇出：输入 ~50-60 组，稳定且调用次数少）。"""
+    merged = [g for b in batches for g in b]
+    compact = _compact_groups(merged)
+    payload = json.dumps({"batches": compact}, ensure_ascii=False)
+    last_err = ""
+    for attempt in range(3):
+        try:
+            resp = client.chat(
+                [{"role": "system", "content": CROSS_BATCH_SYSTEM},
+                 {"role": "user", "content": f"共 {len(compact)} 组，跨批合并：\n{payload}"}],
+                temperature=0.2, max_tokens=16000,
+            )
+            data = extract_json(resp)
+            groups = data.get("groups", [])
+            if not groups:
+                raise LLMError("跨批合并结果为空")
+            return groups
+        except Exception as e:
+            last_err = f"{type(e).__name__}: {str(e)[:80]}"
+            time.sleep(3 * (attempt + 1))
+    raise LLMError(f"跨批合并失败（3 次重试后）：{last_err}")
+
+
+def llm_group_batched(cands: list[dict], client: DeepSeekClient, batch_size: int = 30) -> list[dict]:
+    """大候选集分批分组 + 层级跨批合并（每层两两合并，输入永远可控）。"""
+    if len(cands) <= batch_size:
+        return llm_group(cands, client)
+    batches = [cands[i:i + batch_size] for i in range(0, len(cands), batch_size)]
+    group_batches: list[list[dict]] = []
+    for i, batch in enumerate(batches, 1):
+        print(f"  批 {i}/{len(batches)}（{len(batch)} 条）→ 分组…", flush=True)
+        group_batches.append(llm_group(batch, client))
+    # 层级合并（4 路扇出）：B 批 → ceil(B/4) → … → 1（13 批仅需 5 次跨批调用）
+    round_no = 0
+    while len(group_batches) > 1:
+        round_no += 1
+        nxt: list[list[dict]] = []
+        for i in range(0, len(group_batches), 4):
+            chunk = group_batches[i:i + 4]
+            if len(chunk) == 1:
+                nxt.append(chunk[0])
+                continue
+            # 组数自适应：单次合并 ≤40 组（防输出 JSON 超 max_tokens 截断）
+            while sum(len(b) for b in chunk) > 40 and len(chunk) > 1:
+                chunk = chunk[:len(chunk) // 2]
+            n = sum(len(b) for b in chunk)
+            print(f"  合并轮 {round_no}：{len(chunk)} 批共 {n} 组 → 合并…", flush=True)
+            nxt.append(_cross_merge(chunk, client))
+        group_batches = nxt
+    return group_batches[0]
+
+
 def assemble(groups: list[dict], cands: list[dict], src_dir: Path,
              person: dict, out_path: Path, rejected_dir: Path) -> tuple[dict, list[dict]]:
     """按决策表程序化组装 Method Model。"""
@@ -165,7 +231,8 @@ def assemble(groups: list[dict], cands: list[dict], src_dir: Path,
         gname = g.get("name", "").strip()
         if gtype == "rejected" or not gname:
             for m in members:
-                rejected.append({"candidate": m["id"], "reason": g.get("reason", ""),
+                rejected.append({"candidate": m["id"],
+                                 "reason": g.get("reason") or "LLM 分组判定淘汰（未给原因）",
                                  "name": m["name"], "statement": m["statement"][:100]})
             continue
         # evidence：同组候选跨篇合并
@@ -257,6 +324,9 @@ def _dump_yaml(model: dict) -> str:
         lines.append(f"    file: {s['file']}")
         lines.append(f"    date: {s['date']}")
     for key, prefix in [("principles", ""), ("rules", "r-"), ("cases", "c-"), ("diagnostics", "d-")]:
+        if not model[key]:
+            lines.append(f"{key}: []")
+            continue
         lines.append(f"{key}:")
         for ent in model[key]:
             ent_id = ent["id"] if ent["id"].startswith(prefix) else prefix + ent["id"]
@@ -318,7 +388,7 @@ def main():
     print(f"候选 {len(cands)} 条（{len({c['fid'] for c in cands})} 篇）→ LLM 分组…", flush=True)
 
     client = DeepSeekClient()
-    groups = llm_group(cands, client)
+    groups = llm_group_batched(cands, client)
     print(f"分组完成：{len(groups)} 组（principle {sum(1 for g in groups if g['type']=='principle')} / "
           f"rule {sum(1 for g in groups if g['type']=='rule')} / case {sum(1 for g in groups if g['type']=='case')} / "
           f"diagnostic {sum(1 for g in groups if g['type']=='diagnostic')} / rejected {sum(1 for g in groups if g['type']=='rejected')}）", flush=True)
@@ -330,6 +400,10 @@ def main():
                                out_path, rejected_dir)
     print(f"组装完成：{len(model['principles'])} 原则 / {len(model['rules'])} 规则 / "
           f"{len(model['cases'])} 案例 / {len(model['diagnostics'])} 诊断 / 淘汰 {len(rejected)}", flush=True)
+    if not model["cases"]:
+        print("⚠️ 无案例通过分组——schema 要求 ≥1 案例：请人工补充（可调整分组或手动添加）", flush=True)
+    if not model["principles"]:
+        print("⚠️ 无原则通过分组——请检查候选质量或放宽分组门槛", flush=True)
 
     # 自动校验
     import subprocess
