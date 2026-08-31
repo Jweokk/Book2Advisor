@@ -167,7 +167,25 @@ def _cross_merge(batches: list[list[dict]], client: DeepSeekClient) -> list[dict
     raise LLMError(f"跨批合并失败（3 次重试后）：{last_err}")
 
 
-def llm_group_batched(cands: list[dict], client: DeepSeekClient, batch_size: int = 30) -> list[dict]:
+def _group_with_fallback(batch: list[dict], client: DeepSeekClient, depth: int = 0) -> list[dict]:
+    """分组 + 服务波动自适应：LLM 分组失败（空响应/超时等）时拆半重试，最多 3 级。
+
+    实测：部分模型服务状态下，30 条候选的复杂分组任务会稳定返回空响应（10 条正常、
+    30 条失败，阈值随服务负载漂移）。自适应拆半让脚本在服务波动时自动消化，而非失败退出。
+    """
+    try:
+        return llm_group(batch, client)
+    except LLMError as e:
+        if depth >= 3 or len(batch) <= 2:
+            raise
+        mid = len(batch) // 2
+        print(f"  ⚠️ {len(batch)} 条候选分组失败（{str(e)[:40]}），拆半重试…", flush=True)
+        half_a = _group_with_fallback(batch[:mid], client, depth + 1)
+        half_b = _group_with_fallback(batch[mid:], client, depth + 1)
+        return half_a + half_b
+
+
+def llm_group_batched(cands: list[dict], client: DeepSeekClient, batch_size: int = 20) -> list[dict]:
     """大候选集分批分组 + 层级跨批合并（每层两两合并，输入永远可控）。"""
     if len(cands) <= batch_size:
         return llm_group(cands, client)
@@ -175,7 +193,7 @@ def llm_group_batched(cands: list[dict], client: DeepSeekClient, batch_size: int
     group_batches: list[list[dict]] = []
     for i, batch in enumerate(batches, 1):
         print(f"  批 {i}/{len(batches)}（{len(batch)} 条）→ 分组…", flush=True)
-        group_batches.append(llm_group(batch, client))
+        group_batches.append(_group_with_fallback(batch, client))
     # 层级合并（4 路扇出）：B 批 → ceil(B/4) → … → 1（13 批仅需 5 次跨批调用）
     round_no = 0
     while len(group_batches) > 1:
