@@ -30,13 +30,14 @@ data/methods/example/ 示例模型（导出演示 + 测试 fixture）
 ## 编译路径选择（agent 读这里决定走哪条）
 
 **默认：自主蒸馏**——用自己的能力提取/融合（你的 LLM 能力永远可用，零配置），
-仓库脚本只做机械步骤（校验/导出）。不要翻 `.env`、不要读任何 key 文件（隐私），
-环境检查只读 `os.environ` / shell 环境变量。
+仓库脚本只做机械步骤（校验/导出）。不要翻 `.env`、不要读任何 key 文件内容（隐私）；
+需要判断"脚本路径是否可用"时，跑仓库的 `load_api_key()` 自检命令（下方表格），
+它会统一检查环境变量与 .env 文件——不要自己猜测变量名或文件位置。
 
 | 情况 | 行为 |
 |---|---|
 | **默认**（用户只说"编译/做顾问"） | **自主蒸馏**：直接开干，不问不打断。LLM 步骤自己做，机械步骤用脚本 |
-| 用户明确说"跑脚本 / 自动化 / 快速路径" | 检查环境变量 `DEEPSEEK_API_KEY`（或 `LLM_BASE_URL`/`LLM_MODEL`）：<br>· 有 → 走快速路径（`extract_candidates.py` → `merge_candidates.py`）<br>· 无 → **问用户**："脚本路径需要 LLM API key（设 DEEPSEEK_API_KEY 或 LLM_BASE_URL/LLM_MODEL），或改用本 agent 蒸馏？"——此时才问，因为用户明确要脚本 |
+| 用户明确说"跑脚本 / 自动化 / 快速路径" | 用**仓库代码自检**（不要自己猜 env/文件）：<br>```bash<br>python3 -c "import sys; sys.path.insert(0,'.'); from core.runtime.llm import load_api_key; print('OK' if load_api_key() else 'NO')"<br>```<br>（`load_api_key()` 同时检查环境变量 DEEPSEEK_API_KEY 与项目根 .env 文件——**只输出 OK/NO，不暴露 key 值**）<br>· OK → 走快速路径（`extract_candidates.py` → `merge_candidates.py`）<br>· NO → **问用户**："脚本路径需要 LLM API key（环境变量 DEEPSEEK_API_KEY 或项目根 .env），或改用本 agent 蒸馏？"——此时才问，因为用户明确要脚本 |
 | 用户明确说"用自己的模型 / 不要 DeepSeek" | **自主蒸馏**（本来就是默认，直接说明即可） |
 | 语料 >30 篇 | 自主蒸馏时也按篇分段处理（每段 ≤18K 字符）；交付前提示人工审核 tensions/evolution 与 quote 抽样 |
 
