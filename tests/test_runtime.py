@@ -25,6 +25,13 @@ from core.runtime.llm import DeepSeekClient, LLMError
 
 MODEL_PATH = os.environ.get("METHOD_MODEL", "")  # 需自备方法模型（见 README）
 
+# 无模型文件/无 key 时跳过（开源仓库自带 example 模型不含完整推理数据，
+# 真实运行测试需自备方法模型与 LLM key——见 docs/COMPILING.md）
+_need_model = pytest.mark.skipif(
+    not MODEL_PATH or not Path(MODEL_PATH).is_file(),
+    reason="METHOD_MODEL 未设置或模型文件不存在（需自备方法模型）",
+)
+
 
 def _run(question: str) -> dict:
     """加载模型并执行完整 8 步推理链（真实 LLM 调用）。"""
@@ -33,6 +40,7 @@ def _run(question: str) -> dict:
     return run_chain(model, question, client=client, verbose=False)
 
 
+@_need_model
 def test_ask_direct():
     """A 类题：输出含全部 8 段标题、证据来源非空、含 [第X章] 引用。
 
@@ -56,6 +64,7 @@ def test_ask_direct():
     assert result["reasoning"]["advice"].strip(), "建议段为空"
 
 
+@_need_model
 def test_ask_novel():
     """C 类题（书外新问题，含具体决策情境）：推演标注段同时包含「书中依据」与「推演」。
 
@@ -69,6 +78,7 @@ def test_ask_novel():
     assert "书中依据" in result["trace"], "Method Trace 未体现依据/推演区分"
 
 
+@_need_model
 def test_ask_conflict():
     """D 类题：例外与风险段非空。"""
     result = _run("如实披露质量问题会失去大客户，怎么办？")

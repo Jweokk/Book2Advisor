@@ -373,7 +373,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--src", required=True, help="候选目录（extract_candidates.py 输出）")
     ap.add_argument("--person", required=True, help="人物 id（如 cao-dewang）")
-    ap.add_argument("--name", required=True, help="人物中文名（如 曹德旺）")
+    ap.add_argument("--name", required=True, help="人物中文名（如 目标人物）")
     ap.add_argument("--domain", default="企业管理", help="领域（如 企业管理 / 制造业）")
     ap.add_argument("--brief", default="", help="人物一句话简介")
     ap.add_argument("--out", required=True, help="输出 yaml 路径")

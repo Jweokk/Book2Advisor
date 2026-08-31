@@ -4,6 +4,11 @@
 > 完整链路：**语料收集 → convert → 提取候选 → 融合（含验证门槛）→ 校验 → 生成 trigger**。
 > 全程约 1-2 小时（语料就绪后），LLM 调用为主，可断点续跑。
 
+## 两条编译路径
+
+- **脚本快速路径（本文档）**：仓库脚本自动调 LLM（默认 DeepSeek；换模型设 `LLM_MODEL`/`LLM_BASE_URL` 环境变量，OpenAI 兼容端点均可）
+- **Agent 自主蒸馏路径**：用自己的 agent + 任意 LLM 完成提取与融合（见 `docs/AGENT-DISTILLATION.md`，或让 agent 加载 `skills/book2advisor-compiler` 生成器 skill）
+
 ## 0. 语料收集（按 docs/CORPUS-STANDARD.md）
 
 - 一手来源：本人演讲/访谈实录、书/自传、官方发布；排除二手解读、AI 生成、软文

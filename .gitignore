@@ -32,5 +32,7 @@ venv/
 
 # 具体人物模型（本地保留，不随仓库分发）
 data/methods/*/*.yaml
+!data/methods/example/
+!data/methods/example/*.yaml
 
 # 内部评估/提取工具（依赖具体人物语料，本地使用）

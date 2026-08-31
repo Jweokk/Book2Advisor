@@ -1,0 +1,114 @@
+# Book2Advisor 示例方法模型（迷你版）
+# 用途：① 快速体验 export_skill.py 导出流程 ② tests/test_export_skill.py 的 fixture
+# 真实人物模型请按 docs/COMPILING.md 编译（语料准入 → 提取 → 融合 → 三重验证 → 校验）
+method_version: v0.1
+person:
+  id: example
+  name: 示例人物
+  domain: 企业管理
+  brief: 用于演示的迷你方法模型（3 原则 + 1 规则 + 1 案例 + 1 诊断）
+sources:
+  - id: example-source
+    title: 示例语料
+    type: speech
+    file: example-source
+    date: unknown
+principles:
+  - id: focus
+    name: 聚焦主业
+    statement: 集中资源于核心业务，不盲目多元化
+    confidence: high
+    trigger:
+      scenes:
+        - 企业扩张决策
+        - 新业务评估
+      signals:
+        - 要不要做
+        - 多元化
+      not_for:
+        - 技术选型
+        - 个人理财
+    evidence:
+      - source: example-source
+        loc: s1
+        quote: 力出一孔，利出一孔
+        level: E4
+  - id: crisis
+    name: 居安思危
+    statement: 时刻保持危机意识，行业景气时做准备
+    confidence: high
+    trigger:
+      scenes:
+        - 行业周期判断
+        - 年度规划
+      signals:
+        - 行情很好
+        - 扩张计划
+      not_for:
+        - 日常运营琐事
+    evidence:
+      - source: example-source
+        loc: s4
+        quote: 居安思危，才能长治久安
+        level: E4
+  - id: people
+    name: 以人为本
+    statement: 员工的效率决定企业效率，善待员工
+    confidence: medium
+    trigger:
+      scenes:
+        - 薪酬福利决策
+        - 团队激励
+      signals:
+        - 员工
+        - 待遇
+      not_for:
+        - 产品定价
+    evidence:
+      - source: example-source
+        loc: s5
+        quote: 员工的效率源于企业的善待
+        level: E3
+rules:
+  - id: r-cash
+    name: 危机留现金
+    trigger:
+      - 行业下行
+      - 现金流紧张
+    diagnose:
+      - 现金储备
+      - 扩张计划
+    decisions:
+      行业下行: 停止扩张，保留现金
+    exceptions:
+      - 已签合同且违约成本更高的项目
+    evidence:
+      - source: example-source
+        loc: s2
+        quote: 冬天要准备棉衣
+        level: E3
+cases:
+  - id: c-example
+    name: 示例收缩案例
+    context: 2001 年行业寒冬
+    problem: 业务线过多，现金吃紧
+    decision: 收缩非核心业务
+    action: 砍掉三条业务线，保留核心研发
+    outcome: 渡过寒冬，现金流恢复
+    reasoning: 聚焦核心 + 保留现金，符合聚焦主业原则
+    principle:
+      - focus
+    evidence:
+      - source: example-source
+        loc: s3
+        quote: 我们收缩了业务
+        level: E3
+diagnostics:
+  - id: d-crisis
+    name: 危机诊断
+    order:
+      - 看现金流
+      - 看行业周期
+      - 定收缩范围
+tensions: []
+evolution: []

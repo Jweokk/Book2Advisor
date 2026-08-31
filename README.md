@@ -81,8 +81,9 @@ pip install -r web/requirements.txt
 
 # 2. 配置环境变量
 cp .env.example .env
-#    编辑 .env：DEEPSEEK_API_KEY（DeepSeek，OpenAI 兼容接口）
+#    编辑 .env：DEEPSEEK_API_KEY（LLM API key，默认 DeepSeek）
 #              METHOD_MODEL（方法模型路径，必填——见步骤 3-5 编译生成）
+#    换模型：LLM_BASE_URL / LLM_MODEL 环境变量（任意 OpenAI 兼容端点，默认 DeepSeek 不变）
 
 # 3. 转换语料（书/文档 → markdown）
 python3 scripts/convert.py <your-book.pdf> --person <person> --type book
@@ -101,6 +102,24 @@ cd web && uvicorn app.main:app --host 0.0.0.0 --port 8000
 # 7. 浏览器访问 http://localhost:8000 ，开始咨询
 ```
 
+## 导出 Skill（让 Claude Code / Hermes 等 agent 直接咨询）
+
+方法模型编译好后，一条命令导出为 agent 可加载的人物咨询 skill：
+
+```bash
+python3 scripts/export_skill.py --model data/methods/<person>/<model>.yaml --out ~/.claude/skills/<person>-method
+# 产物：SKILL.md + references/{principles,rules,cases,diagnostics}.md
+# 安装：复制到 ~/.claude/skills/（Claude Code）、~/.hermes/skills/（Hermes）、~/.copilot/skills/ 等
+# 立即体验：python3 scripts/export_skill.py --model data/methods/example/person-example-v0.1.yaml --out /tmp/example-method
+```
+
+之后 agent 会在你问"<人物>会怎么看这个问题"时自动加载该 skill，按「书中依据 vs 方法推演」强制分离的方式回答（详见 docs/SKILL-EXPORT.md）。
+
+**两种蒸馏路径**（编译人物模型时）：
+- **脚本快速路径**：`scripts/extract_candidates.py` → `scripts/merge_candidates.py`（脚本自动调 LLM，默认 DeepSeek，可换模型）——见 docs/COMPILING.md
+- **Agent 自主蒸馏**：用自己的 agent + 任意 LLM 完成提取与融合（不依赖本仓库的 LLM 脚本）——见 docs/AGENT-DISTILLATION.md，或让 agent 加载 `skills/book2advisor-compiler` 生成器 skill
+
+
 > CLI 方式：`python3 scripts/ask.py "你的问题"`（自动加载 METHOD_MODEL）。
 > 语料准入标准见 [docs/CORPUS-STANDARD.md](docs/CORPUS-STANDARD.md)，编译全流程（提取/融合/三重验证/trigger/评估）见 [docs/COMPILING.md](docs/COMPILING.md)。
 
@@ -114,6 +133,9 @@ core/                   # 核心代码
 schemas/                # Person Method Model Schema（JSON Schema，9 类实体）
 scripts/                # CLI：convert / extract_candidates / validate_schema / ask
                         #      / gen_triggers / merge_triggers / batch_ask / score_answers
+skills/                 # 生成器 skill（book2advisor-compiler：agent 自主蒸馏指令）
+templates/              # 咨询流程模板（export_skill 渲染进每份人物 skill）
+data/methods/example/   # 示例方法模型（导出演示 + 测试 fixture）
 web/                    # Web Advisor：FastAPI + 原生前端（Method Trace 展示）
 tests/                  # pytest（真实 LLM 集成测试：运行时 / schema / 转换单测）
 docs/                   # 方法论文档（语料准入标准 / 编译指南）

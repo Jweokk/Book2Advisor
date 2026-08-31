@@ -100,6 +100,23 @@ cd web && uvicorn app.main:app --host 0.0.0.0 --port 8000
 # 6. Open http://localhost:8000 in a browser and ask
 ```
 
+## Export as a Skill (let Claude Code / Hermes agents consult the person directly)
+
+```bash
+python3 scripts/export_skill.py --model data/methods/<person>/<model>.yaml --out ~/.claude/skills/<person>-method
+# Output: SKILL.md + references/{principles,rules,cases,diagnostics}.md
+# Install: copy to ~/.claude/skills/ (Claude Code), ~/.hermes/skills/ (Hermes), ~/.copilot/skills/, etc.
+# Try instantly: python3 scripts/export_skill.py --model data/methods/example/person-example-v0.1.yaml --out /tmp/example-method
+```
+
+The agent auto-loads the skill when you ask "how would <person> view this problem", answering with a strict "cited evidence vs. method extrapolation" split (see docs/SKILL-EXPORT.md).
+
+**Two distillation paths** (when compiling a person model):
+- **Script fast path**: `scripts/extract_candidates.py` → `scripts/merge_candidates.py` (scripts call the LLM automatically; DeepSeek by default, switchable via env vars) — docs/COMPILING.md
+- **Agent-driven distillation**: use your own agent + any LLM for extraction & fusion (no dependency on our LLM scripts) — docs/AGENT-DISTILLATION.md, or let an agent load the `skills/book2advisor-compiler` generator skill
+
+
+
 > CLI mode: `python3 scripts/ask.py "your question"` (loads METHOD_MODEL or the default model).
 > Corpus admission standards and compilation methodology: see [docs/CORPUS-STANDARD.md](docs/CORPUS-STANDARD.md).
 
@@ -110,6 +127,9 @@ core/                   # Core code
   runtime/              #   Runtime: 8-step inference chain (ask.py / llm.py / prompts.py)
 schemas/                # Person Method Model Schema (JSON Schema, 9 entity types)
 scripts/                # CLI: convert / validate_schema / ask / gen_triggers
+skills/                 # Generator skill (book2advisor-compiler: agent-driven distillation)
+templates/              # Consultation-flow template (rendered into every exported skill)
+data/methods/example/   # Example method model (export demo + test fixture)
 web/                    # Web advisor: FastAPI + vanilla frontend (Method Trace view)
 tests/                  # pytest (14 cases: schema / runtime / localization)
 docs/                   # Methodology docs (corpus admission standards, etc.)

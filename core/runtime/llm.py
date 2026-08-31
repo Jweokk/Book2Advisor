@@ -4,7 +4,7 @@ Method Advisor — DeepSeek LLM 封装。
 
 职责：
     1. API key 读取：环境变量 DEEPSEEK_API_KEY → 项目根 .env 文件（KEY=VALUE 格式）
-    2. OpenAI 兼容调用：base_url=https://api.deepseek.com/v1，model=deepseek-v4-flash
+    2. OpenAI 兼容调用：base_url/model 可用环境变量 LLM_BASE_URL/LLM_MODEL 覆盖（默认 DeepSeek）
     3. 150s 超时 + 指数退避重试：429 / 500 / 502 / 503 / 超时 → 最多重试 3 次（1s / 2s / 4s）
        —— 区分超时（TimeoutError 类）与 HTTP 状态错误（HTTPStatusError 类）单独处理
     4. 异常细化：统一转中文 LLMError；严禁把 API key 打印到 stdout / stderr / 日志
@@ -17,9 +17,11 @@ from pathlib import Path
 
 import openai
 
-# DeepSeek 服务参数
-DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
-DEEPSEEK_MODEL = "deepseek-v4-flash"
+# LLM 服务参数（可用环境变量覆盖，默认 DeepSeek——任意 OpenAI 兼容端点均可）：
+#   LLM_BASE_URL  覆盖 base_url（如 https://api.anthropic.com/v1 或自建网关）
+#   LLM_MODEL     覆盖模型名（如 claude-sonnet-4-5 / gpt-4o）
+DEEPSEEK_BASE_URL = os.environ.get("LLM_BASE_URL", "https://api.deepseek.com/v1")
+DEEPSEEK_MODEL = os.environ.get("LLM_MODEL", "deepseek-v4-flash")
 REQUEST_TIMEOUT = 150.0         # 硬性：单次请求超时 150s（推理模型思考计入 max_tokens，16000 输出需 90-150s）
 MAX_RETRIES = 3                 # 硬性：最多重试 3 次
 RETRYABLE_STATUS = {429, 500, 502, 503}   # 硬性：可重试的 HTTP 状态码
