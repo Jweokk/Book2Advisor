@@ -114,8 +114,6 @@ def render_skill_md(model: dict, flow_text: str) -> str:
            "",
            "不匹配时不要强行调用本 skill。",
            "",
-           "## 咨询流程",
-           "",
            flow_text,
            "",
            "## 核心方法速览",
@@ -158,7 +156,8 @@ def render_principles(model: dict) -> str:
 def render_rules(model: dict) -> str:
     out: list[str] = ["# 规则", "", "> 触发条件命中时执行对应决策；exceptions 列出的情况例外。", ""]
     for r in model.get("rules", []):
-        out.append(f"## {r.get('name', '')}（`{r.get('id', '')}`）")
+        rname = r.get("name") or r.get("id", "未命名")
+        out.append(f"## {rname}（`{r.get('id', '')}`）")
         out.append("")
         if r.get("trigger"):
             out.append("- 触发条件：" + "；".join(r["trigger"]))
@@ -181,7 +180,8 @@ def render_rules(model: dict) -> str:
 def render_cases(model: dict) -> str:
     out: list[str] = ["# 案例", ""]
     for c in model.get("cases", []):
-        out.append(f"## {c.get('name', '')}（`{c.get('id', '')}`）")
+        cname = c.get("name") or c.get("id", "未命名")
+        out.append(f"## {cname}（`{c.get('id', '')}`）")
         out.append("")
         for k, label in (("context", "背景"), ("problem", "问题"), ("decision", "决策"),
                          ("action", "行动"), ("outcome", "结果"), ("reasoning", "推理")):
