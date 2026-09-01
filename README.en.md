@@ -123,6 +123,28 @@ The agent auto-loads the skill when you ask "how would <person> view this proble
 > CLI mode: `python3 scripts/ask.py "your question"` (loads METHOD_MODEL or the default model).
 > Corpus admission standards and compilation methodology: see [docs/CORPUS-STANDARD.md](docs/CORPUS-STANDARD.md).
 
+## Using with an AI Agent (copy-paste ready)
+
+The root **AGENTS.md** is auto-read by Claude Code / Codex / Copilot etc. (project orientation, command chain, path-selection rules, hard constraints). Two ways:
+
+**① Simplest**: clone the repo, open the directory in your agent, and say:
+
+```text
+Follow AGENTS.md. Use skills/book2advisor-compiler to compile my corpus
+(path: <your corpus dir>) into a method-advisor skill for <person>.
+```
+
+**② Copy-paste this to your agent** (no need to clone first):
+
+```text
+Please visit https://github.com/Jweokk/Book2Advisor and work per its AGENTS.md:
+1. Install skills/book2advisor-compiler as a usable skill (e.g. copy to ~/.claude/skills/ or per your skill mechanism);
+2. Use it to compile the following materials into a person-method advisor: <materials location or paste>
+3. Output: method model yaml (passing validate_schema) + the exported <person>-method skill.
+```
+
+The agent will: read AGENTS.md → pick a path by corpus size (agent-driven distillation by default; large corpora prompt the script fast path) → compile → validate → export the skill.
+
 ## Directory layout
 
 ```

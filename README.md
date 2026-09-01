@@ -127,6 +127,28 @@ python3 scripts/export_skill.py --model data/methods/<person>/<model>.yaml --out
 
 **评估（可选但强烈推荐）**：建 `evaluations/<person>/`（复制 `evaluations/example/` 模板并改写），跑四组评估——`batch_ask.py --person <person> --model <model.yaml> --group core|lures|confusions|out-of-scope` + `score_answers.py --person <person> --group <group>`（judge 模型独立于答题模型，双 agent 盲测）。详见 docs/COMPILING.md 第 6 节。
 
+## 与 AI Agent 一起使用（复制即用）
+
+本仓库根目录的 **AGENTS.md** 会被 Claude Code / Codex / Copilot 等 agent 自动读取（项目定位、命令链、路径选择规则、硬约束都在里面）。两种用法：
+
+**① 最简**：把仓库克隆到本地，在 agent 中打开该目录，直接说：
+
+```text
+请按 AGENTS.md 的指引，用 skills/book2advisor-compiler 把我的语料
+（路径：<你的语料目录>）编译成 <人物名> 的方法论顾问 skill。
+```
+
+**② 复制这段话给你的 agent**（无需先克隆，agent 会自己处理）：
+
+```text
+请访问 https://github.com/Jweokk/Book2Advisor 并按其 AGENTS.md 指引工作：
+1. 把 skills/book2advisor-compiler 安装为可用 skill（如复制到 ~/.claude/skills/，或按你的 skill 机制加载）；
+2. 用它把以下资料编译成人物方法论顾问：<资料位置或粘贴内容>
+3. 输出：方法模型 yaml（过 validate_schema）+ 导出的 <人物>-method skill。
+```
+
+agent 会自动：读 AGENTS.md → 按语料规模选路径（缺省自主蒸馏，大语料提示走脚本快速路径）→ 编译 → 校验 → 导出 skill。
+
 ## 目录结构
 
 ```
