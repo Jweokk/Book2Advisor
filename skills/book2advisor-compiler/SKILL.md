@@ -89,6 +89,21 @@ python3 scripts/export_skill.py --model <model>.yaml --out ~/.claude/skills/<per
 | 可选：批量提取候选（脚本自动调 LLM） | `scripts/extract_candidates.py`（如使用请设 LLM_MODEL 环境变量） |
 | 可选：自动融合（脚本自动调 LLM） | `scripts/merge_candidates.py`（同上） |
 
+**使用前检查**：
+- `convert.py` 需要转换器：优先 anydoc（npm 全局安装），缺失时自动回退 markitdown（`pip install markitdown`）。
+  若本地都未安装且你（agent）自己能读文档（PDF/EPUB 等）——**直接用你的能力转换**，转换不是必须用脚本；
+  用脚本时先确认依赖，缺失则安装（`npm i -g anydoc` 或 `pip install markitdown`）或告知用户。
+- 大文件转换耗时：1512 页书约 230 秒（convert.py 默认超时 600s，可用 `CONVERT_TIMEOUT` 环境变量调整）。
+
+**何时用脚本跑 LLM 步骤（快速路径）**：
+- 语料 ≥8 份 / ≥200KB 时建议：脚本自动分段（18K）、断点续跑、分批+跨批合并、quote 机械搬运——大语料下更稳且可版本回归
+- 使用前提：LLM key——配置位置：环境变量 `DEEPSEEK_API_KEY`，或项目根 `.env` 文件（`cp .env.example .env` 填入）；
+  换模型：`LLM_BASE_URL` / `LLM_MODEL` 环境变量（任意 OpenAI 兼容端点）
+- 自检脚本路径是否可用（只输出 OK/NO，不暴露 key）：
+  ```bash
+  python3 -c "import sys; sys.path.insert(0,'.'); from core.runtime.llm import load_api_key; print('OK' if load_api_key() else 'NO')"
+  ```
+
 > 推荐：LLM 步骤（提取/融合）**用自己的能力完成**（保证用你自己的模型/agent 蒸馏）；
 > 机械步骤（转换/校验/导出）用仓库脚本。两者可自由组合。
 

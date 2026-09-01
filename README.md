@@ -86,9 +86,11 @@ cp .env.example .env
 #    换模型：LLM_BASE_URL / LLM_MODEL 环境变量（任意 OpenAI 兼容端点，默认 DeepSeek 不变）
 
 # 3. 转换语料（书/文档 → markdown）
+#    耗时参考：小文件秒级；1500 页大书约 4 分钟（convert.py 默认超时 600s，超长可设 CONVERT_TIMEOUT）
 python3 scripts/convert.py <your-book.pdf> --person <person> --type book
 
 # 4. 编译方法模型（语料 → 候选提取 → 融合 → Method Model，完整流程见 docs/COMPILING.md）
+#    耗时参考：小语料（1-3 份）约 5-10 分钟；大语料（10+ 份 / 100 万+字）约 1-2 小时（LLM 调用为主，可断点续跑）
 python3 scripts/extract_candidates.py --src data/sources/<person>/book --out /tmp/<person>-extract
 #    （融合汇总为 data/methods/<person>/<model>-v0.1.yaml，含三重验证门槛）
 

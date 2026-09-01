@@ -32,7 +32,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ANYDOC_PATH = Path(os.environ.get("ANYDOC_PATH", str(Path.home() / ".npm-global/bin/anydoc")))
-CONVERT_TIMEOUT = 120  # 外部命令超时（秒）
+CONVERT_TIMEOUT = int(os.environ.get("CONVERT_TIMEOUT", "600"))  # 外部命令超时（秒）；大书实测 1512 页 ~230s，默认 600s 留足余量
 
 VALID_TYPES = ("book", "article", "speech", "case")
 
@@ -81,6 +81,7 @@ def convert_with_anydoc(file_path: Path) -> str:
             timeout=CONVERT_TIMEOUT,
             capture_output=True,
             text=True,
+            encoding="utf-8", errors="replace",  # 固定 UTF-8 解码，防 Windows locale(GBK) 崩溃
         )
     except FileNotFoundError:
         raise ConversionError(f"找不到 anydoc 可执行文件: {ANYDOC_PATH}，请先安装 anydoc") from None
@@ -107,6 +108,8 @@ def convert_with_markitdown(file_path: Path) -> str:
             timeout=CONVERT_TIMEOUT,
             capture_output=True,
             text=True,
+            encoding="utf-8", errors="replace",  # 固定 UTF-8 解码，防 Windows locale(GBK) 崩溃
+            env={**os.environ, "PYTHONUTF8": "1"},  # 子进程强制 UTF-8（Windows 必需）
         )
     except FileNotFoundError:
         raise ConversionError("找不到 markitdown 模块（python3 -m markitdown 不可用）") from None

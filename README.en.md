@@ -89,6 +89,9 @@ cp .env.example .env
 
 # 3. Convert corpus (book/document → markdown)
 python3 scripts/convert.py <your-book.pdf> --person jack-welch --type book
+#    Time: small files instant; a 1500-page book ≈ 4 min (default timeout 600s, override via CONVERT_TIMEOUT)
+#    Compile (extract → fuse → validate, see docs/COMPILING.md): small corpus (1-3 sources) ≈ 5-10 min;
+#    large corpus (10+ sources / 1M+ chars) ≈ 1-2 hours (LLM-bound, resumable)
 
 # 4. Validate the method model (must pass before use)
 python3 scripts/validate_schema.py data/methods/<person>/<model>.yaml
