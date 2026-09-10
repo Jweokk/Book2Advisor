@@ -142,7 +142,7 @@ def run_chain(model: dict, question: str, client=None, verbose: bool = False,
             {"role": "system", "content": prompts.classify_system()},
             {"role": "user", "content": prompts.classify_user(question, diagnostics_all)},
         ]
-        # 注意：deepseek-v4-flash 为推理模型，思考过程计入 max_tokens 预算，
+        # 注意：deepseek-flash 为推理模型，思考过程计入 max_tokens 预算，
         # 故各步预算需留足余量，否则会被 finish_reason=length 截断
         reply = _chat(client, messages, "步骤2 问题分类", verbose,
                       temperature=0.1, max_tokens=3000)

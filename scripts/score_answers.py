@@ -8,7 +8,7 @@
 
 core 组：v0.1 / v0.4 双版本对比（若存在 batch-40-answers-v0.1.md）；
 lures/confusions/out-of-scope 组：单版本评分。
-评分使用独立 judge 模型（--judge-model，默认 deepseek-v4-flash），与答题模型分离——
+评分使用独立 judge 模型（--judge-model，默认 deepseek-flash），与答题模型分离——
 答题 agent 与评分 agent 双 agent 盲测（LLM 自评 skill 质量准确率仅约 46%）。
 """
 import sys
@@ -115,7 +115,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--person", required=True, help="evaluations/ 下的目录名（如 example，与 batch_ask.py --person 一致）")
     ap.add_argument("--group", default="core", choices=["core", "lures", "confusions", "out-of-scope"])
-    ap.add_argument("--judge-model", default="deepseek-v4-flash", help="评分（judge）模型名，独立于答题模型")
+    ap.add_argument("--judge-model", default="deepseek-flash", help="评分（judge）模型名，独立于答题模型")
     ap.add_argument("--base", default=str(PROJECT_ROOT / "evaluations"), help="评估数据根目录")
     args = ap.parse_args()
 

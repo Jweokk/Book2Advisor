@@ -21,7 +21,7 @@ import openai
 #   LLM_BASE_URL  覆盖 base_url（如 https://api.anthropic.com/v1 或自建网关）
 #   LLM_MODEL     覆盖模型名（如 claude-sonnet-4-5 / gpt-4o）
 DEEPSEEK_BASE_URL = os.environ.get("LLM_BASE_URL", "https://api.deepseek.com/v1")
-DEEPSEEK_MODEL = os.environ.get("LLM_MODEL", "deepseek-v4-flash")
+DEEPSEEK_MODEL = os.environ.get("LLM_MODEL", "deepseek-flash")
 REQUEST_TIMEOUT = 150.0         # 硬性：单次请求超时 150s（推理模型思考计入 max_tokens，16000 输出需 90-150s）
 MAX_RETRIES = 3                 # 硬性：最多重试 3 次
 RETRYABLE_STATUS = {429, 500, 502, 503}   # 硬性：可重试的 HTTP 状态码
