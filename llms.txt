@@ -1,0 +1,26 @@
+# Book2Advisor
+
+> 把一个人的书、演讲、访谈编译成可结构化推演的「人物方法论顾问」——每条结论都标注是书中依据还是方法推演。
+
+输入一个人的语料（书 / 文章 / 演讲 / 访谈 / 案例），编译成 Person Method Model（原则 / 规则 / 案例 /
+诊断路径 / 观点张力 / 思想演变 + 证据链），运行时按方法论推演，输出 8 段可审计的 Method Trace。
+面向需要**可追溯依据**、不接受"AI 编的"的决策咨询场景。
+
+Book2Advisor turns a person's books, talks and interviews into a traceable methodology advisor: corpus →
+Person Method Model → inferential answers, where every line is labelled as quoted-from-source or
+inferred-by-method. Built for decision support that requires auditable evidence.
+
+- 与通用 RAG 的区别：书外新问题按方法论外推（Method Transfer），不是拼凑相似片段
+- 形态 / Forms：Web 顾问 · CLI · API · Agent Skill
+- 证据分级 / Evidence tiers：E1–E5，引用 quote 逐字可回原文核对
+- 许可 / License：MIT · Python · FastAPI
+
+## 关键文件 / Key files
+- [README（中文）](https://github.com/Jweokk/Book2Advisor/blob/main/README.md)
+- [README (English)](https://github.com/Jweokk/Book2Advisor/blob/main/README.en.md)
+- [AGENTS.md](https://github.com/Jweokk/Book2Advisor/blob/main/AGENTS.md) — 给 agent 的仓库工作指南 / repo guide for AI agents
+- [语料准入标准 / Corpus standard](https://github.com/Jweokk/Book2Advisor/blob/main/docs/CORPUS-STANDARD.md)
+- [完整编译指南 / Compiling guide](https://github.com/Jweokk/Book2Advisor/blob/main/docs/COMPILING.md)
+- [agent 自主蒸馏路径 / Agent distillation](https://github.com/Jweokk/Book2Advisor/blob/main/docs/AGENT-DISTILLATION.md)
+- [示例方法模型 / Example method model](https://github.com/Jweokk/Book2Advisor/tree/main/data/methods/example)
+- [四组评估模板 / Four-way eval templates](https://github.com/Jweokk/Book2Advisor/tree/main/evaluations/example)
